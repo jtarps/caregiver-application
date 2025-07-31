@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, X, Upload, FileText } from "lucide-react";
+import { Plus, X, Upload, FileText, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -577,48 +577,34 @@ export default function MultiStepApplicationForm() {
 
   const renderStep1 = () => (
     <div className="space-y-6">
-      <h3 className="text-xl font-semibold text-blue-900 border-b-2 border-blue-200 pb-2">
+      <h3 className="text-lg sm:text-xl font-semibold text-blue-900 border-b-2 border-blue-200 pb-2">
         Personal Information
       </h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <p className="text-gray-600 text-sm sm:text-base">
+        Please provide your personal information. All fields marked with an
+        asterisk (*) are required.
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="firstName">Full Name *</Label>
+          <Label htmlFor="firstName">First Name *</Label>
           <Input
             id="firstName"
-            value={formData.firstName}
-            onChange={(e) => updateFormData("firstName", e.target.value)}
+            value={formData.first_name}
+            onChange={(e) => updateFormData("first_name", e.target.value)}
             placeholder="First Name"
             required
+            className="mt-1"
           />
         </div>
         <div>
           <Label htmlFor="lastName">Last Name *</Label>
           <Input
             id="lastName"
-            value={formData.lastName}
-            onChange={(e) => updateFormData("lastName", e.target.value)}
+            value={formData.last_name}
+            onChange={(e) => updateFormData("last_name", e.target.value)}
             placeholder="Last Name"
             required
-          />
-        </div>
-        <div className="md:col-span-2">
-          <Label htmlFor="address">Current Address *</Label>
-          <Input
-            id="address"
-            value={formData.address}
-            onChange={(e) => updateFormData("address", e.target.value)}
-            placeholder="Full Address"
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="phone">Phone Number *</Label>
-          <Input
-            id="phone"
-            value={formData.phone}
-            onChange={(e) => updateFormData("phone", e.target.value)}
-            placeholder="(555) 123-4567"
-            required
+            className="mt-1"
           />
         </div>
         <div>
@@ -630,6 +616,29 @@ export default function MultiStepApplicationForm() {
             onChange={(e) => updateFormData("email", e.target.value)}
             placeholder="email@example.com"
             required
+            className="mt-1"
+          />
+        </div>
+        <div>
+          <Label htmlFor="phone">Phone Number *</Label>
+          <Input
+            id="phone"
+            value={formData.phone}
+            onChange={(e) => updateFormData("phone", e.target.value)}
+            placeholder="(555) 123-4567"
+            required
+            className="mt-1"
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <Label htmlFor="address">Address *</Label>
+          <Input
+            id="address"
+            value={formData.address}
+            onChange={(e) => updateFormData("address", e.target.value)}
+            placeholder="Full Address"
+            required
+            className="mt-1"
           />
         </div>
         <div>
@@ -637,99 +646,22 @@ export default function MultiStepApplicationForm() {
           <Input
             id="dateOfBirth"
             type="date"
-            min="1900-01-01"
-            max={new Date().toISOString().split("T")[0]}
-            value={formData.dateOfBirth}
-            onChange={(e) => updateFormData("dateOfBirth", e.target.value)}
+            value={formData.date_of_birth}
+            onChange={(e) => updateFormData("date_of_birth", e.target.value)}
             required
+            className="mt-1"
           />
         </div>
         <div>
-          <Label htmlFor="socialInsuranceNumber">
-            Social Insurance Number *
-          </Label>
+          <Label htmlFor="sin">Social Insurance Number *</Label>
           <Input
-            id="socialInsuranceNumber"
-            value={formData.socialInsuranceNumber}
-            onChange={(e) =>
-              updateFormData("socialInsuranceNumber", e.target.value)
-            }
-            placeholder="123-456-789"
+            id="sin"
+            value={formData.social_insurance_number}
+            onChange={(e) => updateFormData("social_insurance_number", e.target.value)}
+            placeholder="XXX-XXX-XXX"
             required
+            className="mt-1"
           />
-        </div>
-        <div>
-          <Label htmlFor="weeklyAvailability">
-            Weekly Availability (hours) *
-          </Label>
-          <Input
-            id="weeklyAvailability"
-            type="number"
-            value={formData.weeklyAvailability}
-            onChange={(e) =>
-              updateFormData(
-                "weeklyAvailability",
-                parseInt(e.target.value) || 0
-              )
-            }
-            placeholder="40"
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="sourceOfInformation">Source of Information *</Label>
-          <Select
-            value={formData.sourceOfInformation}
-            onValueChange={(value) =>
-              updateFormData("sourceOfInformation", value)
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select source" />
-            </SelectTrigger>
-            <SelectContent>
-              {sourceOptions.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="hasDriverLicense"
-            checked={formData.hasDriverLicense}
-            onCheckedChange={(checked) =>
-              updateFormData("hasDriverLicense", checked)
-            }
-          />
-          <Label htmlFor="hasDriverLicense">Valid Driver's License</Label>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="legallyEligibleEmployment"
-            checked={formData.legallyEligibleEmployment}
-            onCheckedChange={(checked) =>
-              updateFormData("legallyEligibleEmployment", checked)
-            }
-          />
-          <Label htmlFor="legallyEligibleEmployment">
-            Legally Eligible for Employment in Canada
-          </Label>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="previouslyApplied"
-            checked={formData.previouslyApplied}
-            onCheckedChange={(checked) =>
-              updateFormData("previouslyApplied", checked)
-            }
-          />
-          <Label htmlFor="previouslyApplied">Previously Applied</Label>
         </div>
       </div>
     </div>
@@ -1223,7 +1155,8 @@ export default function MultiStepApplicationForm() {
         Document Uploads
       </h3>
       <p className="text-gray-600">
-        Please provide your personal information. All fields marked with an asterisk (*) are required.
+        Please provide your personal information. All fields marked with an
+        asterisk (*) are required.
       </p>
       <div className="space-y-4">
         {documentTypes.map((docType) => (
@@ -1383,77 +1316,77 @@ export default function MultiStepApplicationForm() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <Card className="border-2 border-blue-100 shadow-lg">
-        <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold">Haven at Home</h2>
-            <p className="text-blue-100">Caregiver Application Form</p>
-          </div>
-          <div className="space-y-2 mt-4">
-            <div className="flex justify-between text-sm text-blue-100">
-              <span className="font-medium">
-                Step {currentStep} of {totalSteps}
-              </span>
-              <span className="font-medium">
-                {Math.round(progress)}% Complete
-              </span>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-4 px-4 sm:py-8">
+      <div className="max-w-4xl mx-auto">
+        <Card className="border-2 border-blue-100 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+            <div className="text-center">
+              <h2 className="text-xl sm:text-2xl font-bold">Haven at Home</h2>
+              <p className="text-blue-100 text-sm sm:text-base">Caregiver Application Form</p>
             </div>
-            <Progress value={progress} className="w-full h-3" />
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6 bg-white">
-          {renderStep()}
+            <div className="space-y-2 mt-4">
+              <div className="flex justify-between text-sm text-blue-100">
+                <span className="font-medium">
+                  Step {currentStep} of {totalSteps}
+                </span>
+                <span className="font-medium">
+                  {Math.round(progress)}% Complete
+                </span>
+              </div>
+              <Progress value={progress} className="w-full h-3" />
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6 bg-white p-4 sm:p-6">
+            {renderStep()}
 
-          <div className="flex justify-between pt-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={prevStep}
-              disabled={currentStep === 1}
-              className="border-blue-600 text-blue-600 hover:bg-blue-50"
-            >
-              Previous
-            </Button>
-
-            {currentStep < totalSteps ? (
+            <div className="flex flex-col sm:flex-row justify-between gap-4 pt-6">
               <Button
                 type="button"
-                onClick={nextStep}
-                disabled={!validateStep(currentStep)}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                variant="outline"
+                onClick={prevStep}
+                disabled={currentStep === 1}
+                className="border-blue-600 text-blue-600 hover:bg-blue-50 order-2 sm:order-1"
               >
-                {currentStep === 1
-                  ? "Education & Experience"
-                  : currentStep === 2
-                  ? "Employment History"
-                  : currentStep === 3
-                  ? "Professional References"
-                  : currentStep === 4
-                  ? "Emergency Contact"
-                  : currentStep === 5
-                  ? "Legal Information"
-                  : currentStep === 6
-                  ? "Skills & Credentials"
-                  : currentStep === 7
-                  ? "Document Uploads"
-                  : currentStep === 8
-                  ? "Final Declaration"
-                  : "Submit Application"}
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Previous
               </Button>
-            ) : (
-              <Button
-                type="button"
-                onClick={submitApplication}
-                disabled={isSubmitting || !validateStep(currentStep)}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                {isSubmitting ? "Submitting..." : "Submit Application"}
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+
+              {currentStep < totalSteps ? (
+                <Button
+                  type="button"
+                  onClick={nextStep}
+                  disabled={!validateStep(currentStep)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white order-1 sm:order-2"
+                >
+                  {currentStep === 1
+                    ? "Personal Information"
+                    : currentStep === 2
+                    ? "Contact Information"
+                    : currentStep === 3
+                    ? "Education & Experience"
+                    : currentStep === 4
+                    ? "Skills & Availability"
+                    : currentStep === 5
+                    ? "Background & References"
+                    : currentStep === 6
+                    ? "Documents & Agreements"
+                    : "Submit Application"}
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={submitApplication}
+                  disabled={isSubmitting || !validateStep(currentStep)}
+                  className="bg-green-600 hover:bg-green-700 text-white order-1 sm:order-2"
+                >
+                  {isSubmitting ? "Submitting..." : "Submit Application"}
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

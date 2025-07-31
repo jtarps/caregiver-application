@@ -1444,86 +1444,89 @@ export default function PSWCompetencyAssessment() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <Card className="border-2 border-blue-100 shadow-lg">
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
-          <CardTitle className="text-2xl text-center text-blue-900">
-            Haven at Home - PSW Competency Assessment
-          </CardTitle>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm text-gray-600">
-              <span className="font-medium">
-                Step {currentStep} of {totalSteps}
-              </span>
-              <span className="font-medium text-blue-600">
-                {Math.round(progress)}% Complete
-              </span>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-4 px-4 sm:py-8">
+      <div className="max-w-4xl mx-auto">
+        <Card className="border-2 border-blue-100 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
+            <CardTitle className="text-lg sm:text-2xl text-center text-blue-900">
+              Haven at Home - PSW Competency Assessment
+            </CardTitle>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm text-gray-600">
+                <span className="font-medium">
+                  Step {currentStep} of {totalSteps}
+                </span>
+                <span className="font-medium text-blue-600">
+                  {Math.round(progress)}% Complete
+                </span>
+              </div>
+              <Progress value={progress} className="w-full h-3" />
             </div>
-            <Progress value={progress} className="w-full h-3" />
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6 bg-white">
-          {/* Description */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <p className="text-blue-900 text-sm leading-relaxed">
-              This form helps us get to know your strengths and the areas where
-              you&apos;d appreciate more support. It&apos;s not a test — we&apos;re here to
-              learn with you, grow together, and build a respectful working
-              relationship. Answer what feels true to your experience.
-            </p>
-          </div>
+          </CardHeader>
+          <CardContent className="space-y-6 bg-white p-4 sm:p-6">
+            {/* Description */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <p className="text-blue-900 text-sm leading-relaxed">
+                This form helps us get to know your strengths and the areas where
+                you&apos;d appreciate more support. It&apos;s not a test —
+                we&apos;re here to learn with you, grow together, and build a
+                respectful working relationship. Answer what feels true to your
+                experience.
+              </p>
+            </div>
 
-          {renderStep()}
+            {renderStep()}
 
-          <div className="flex justify-between pt-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={prevStep}
-              disabled={currentStep === 1}
-              className="border-blue-600 text-blue-600 hover:bg-blue-50"
-            >
-              <ChevronLeft className="h-4 w-4 mr-2" />
-              Previous
-            </Button>
-
-            {currentStep < totalSteps ? (
+            <div className="flex flex-col sm:flex-row justify-between gap-4 pt-6">
               <Button
                 type="button"
-                onClick={nextStep}
-                disabled={!validateStep(currentStep)}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                variant="outline"
+                onClick={prevStep}
+                disabled={currentStep === 1}
+                className="border-blue-600 text-blue-600 hover:bg-blue-50 order-2 sm:order-1"
               >
-                {currentStep === 1
-                  ? "Personal Information"
-                  : currentStep === 2
-                  ? "Personal Care & Hygiene"
-                  : currentStep === 3
-                  ? "Bowel & Bladder Support"
-                  : currentStep === 4
-                  ? "Mobility & Safety Support"
-                  : currentStep === 5
-                  ? "Kitchen Care & Cleaning"
-                  : currentStep === 6
-                  ? "Meal Preparation & Food Handling"
-                  : currentStep === 7
-                  ? "Housekeeping, Laundry & Organizing"
-                  : "Health, Safety & Support Skills"}
-                <ChevronRight className="h-4 w-4 ml-2" />
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Previous
               </Button>
-            ) : (
-              <Button
-                type="button"
-                onClick={submitAssessment}
-                disabled={isSubmitting || !validateStep(currentStep)}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                {isSubmitting ? "Submitting..." : "Submit Assessment"}
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+
+              {currentStep < totalSteps ? (
+                <Button
+                  type="button"
+                  onClick={nextStep}
+                  disabled={!validateStep(currentStep)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white order-1 sm:order-2"
+                >
+                  {currentStep === 1
+                    ? "Personal Information"
+                    : currentStep === 2
+                    ? "Personal Care & Hygiene"
+                    : currentStep === 3
+                    ? "Bowel & Bladder Support"
+                    : currentStep === 4
+                    ? "Mobility & Safety Support"
+                    : currentStep === 5
+                    ? "Kitchen Care & Cleaning"
+                    : currentStep === 6
+                    ? "Meal Preparation & Food Handling"
+                    : currentStep === 7
+                    ? "Housekeeping, Laundry & Organizing"
+                    : "Health, Safety & Support Skills"}
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={submitAssessment}
+                  disabled={isSubmitting || !validateStep(currentStep)}
+                  className="bg-green-600 hover:bg-green-700 text-white order-1 sm:order-2"
+                >
+                  {isSubmitting ? "Submitting..." : "Submit Assessment"}
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
