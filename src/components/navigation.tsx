@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Home, Users, Settings, ClipboardCheck } from "lucide-react";
+import { Home, ClipboardCheck } from "lucide-react";
 
 export default function Navigation() {
   const pathname = usePathname();

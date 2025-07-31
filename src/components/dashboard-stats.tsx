@@ -12,8 +12,14 @@ import {
   DollarSign,
 } from "lucide-react";
 
+interface Application {
+  id: string;
+  status: string;
+  created_at: string;
+}
+
 interface DashboardStatsProps {
-  applications: any[];
+  applications: Application[];
 }
 
 export default function DashboardStats({ applications }: DashboardStatsProps) {

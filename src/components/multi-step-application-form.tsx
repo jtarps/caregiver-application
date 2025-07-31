@@ -320,7 +320,7 @@ export default function MultiStepApplicationForm() {
 
       updateFormData("documents", [...formData.documents, newDocument]);
       toast.success("Document uploaded successfully");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error uploading file:", error);
 
       if (error?.statusCode === 403) {
@@ -567,11 +567,9 @@ export default function MultiStepApplicationForm() {
       setRawSpecializations("");
       setRawLanguages("");
       router.push(`/psw-assessment?applicationId=${applicationId}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error submitting application:", error);
-      if (!error.code) {
-        toast.error("Failed to submit application. Please try again.");
-      }
+      toast.error("Failed to submit application. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -1224,10 +1222,8 @@ export default function MultiStepApplicationForm() {
       <h3 className="text-xl font-semibold text-blue-900 border-b-2 border-blue-200 pb-2">
         Document Uploads
       </h3>
-      <p className="text-sm text-gray-600 mb-4">
-        Please upload at least one document (max 2MB per file). You can upload
-        additional documents now or provide them later during the hiring
-        process:
+      <p className="text-gray-600">
+        Please provide your personal information. All fields marked with an asterisk (*) are required.
       </p>
       <div className="space-y-4">
         {documentTypes.map((docType) => (

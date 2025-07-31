@@ -18,9 +18,9 @@ export default function Home() {
                 </p>
               </div>
               <p className="text-gray-600 max-w-2xl mx-auto">
-                Join our team of compassionate caregivers and make a difference
-                in people's lives. Complete the form below to apply for a
-                caregiver position with Haven at Home.
+                Complete this comprehensive application to join our team of compassionate caregivers.
+                We&apos;re looking for dedicated individuals who share our commitment to providing
+                exceptional care with dignity and respect.
               </p>
             </div>
             <MultiStepApplicationForm />

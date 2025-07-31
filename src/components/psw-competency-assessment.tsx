@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 interface AssessmentData {
   // Personal Information
@@ -196,7 +196,6 @@ export default function PSWCompetencyAssessment() {
   const totalSteps = 8;
   const progress = (currentStep / totalSteps) * 100;
 
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   // Generate unique assessment ID when component mounts
@@ -430,7 +429,7 @@ export default function PSWCompetencyAssessment() {
           "Your assessment has been linked to your caregiver application!"
         );
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error submitting assessment:", error);
       toast.error("Failed to submit assessment. Please try again.");
     } finally {
@@ -1404,7 +1403,7 @@ export default function PSWCompetencyAssessment() {
             htmlFor="specialNotes"
             className="text-base font-semibold text-gray-900"
           >
-            Feel free to share any caregiving tasks you'd like more support
+            Feel free to share any caregiving tasks you&apos;d like more support
             with, or anything unique about your caregiving style.
           </Label>
           <Textarea
@@ -1468,7 +1467,7 @@ export default function PSWCompetencyAssessment() {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <p className="text-blue-900 text-sm leading-relaxed">
               This form helps us get to know your strengths and the areas where
-              you'd appreciate more support. It's not a test — we're here to
+              you&apos;d appreciate more support. It&apos;s not a test — we&apos;re here to
               learn with you, grow together, and build a respectful working
               relationship. Answer what feels true to your experience.
             </p>
