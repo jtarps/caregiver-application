@@ -49,7 +49,9 @@ export default function AdminPortal() {
     try {
       const { data, error } = await supabase
         .from("caregiver_applications")
-        .select("id, application_id, first_name, last_name, email, phone, status, created_at, updated_at");
+        .select(
+          "id, application_id, first_name, last_name, email, phone, status, created_at, updated_at"
+        );
 
       if (error) {
         console.error("Error fetching applications:", error);
