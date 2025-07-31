@@ -187,7 +187,9 @@ const initialAssessmentData: AssessmentData = {
 
 function PSWCompetencyAssessmentContent() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [assessmentData, setAssessmentData] = useState<AssessmentData>(initialAssessmentData);
+  const [assessmentData, setAssessmentData] = useState<AssessmentData>(
+    initialAssessmentData
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [assessmentId, setAssessmentId] = useState<string>("");
 
@@ -1532,18 +1534,20 @@ function PSWCompetencyAssessmentContent() {
 
 export default function PSWCompetencyAssessment() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-4 px-4 sm:py-8">
-        <div className="max-w-4xl mx-auto">
-          <Card className="border-2 border-blue-100 shadow-lg">
-            <CardContent className="p-8 text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading assessment...</p>
-            </CardContent>
-          </Card>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-4 px-4 sm:py-8">
+          <div className="max-w-4xl mx-auto">
+            <Card className="border-2 border-blue-100 shadow-lg">
+              <CardContent className="p-8 text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading assessment...</p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <PSWCompetencyAssessmentContent />
     </Suspense>
   );

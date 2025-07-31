@@ -198,7 +198,10 @@ export default function MultiStepApplicationForm() {
   }, []);
 
   const totalSteps = 9;
-  const progress = (currentStep / totalSteps) * 100;
+  const progress = Math.min((currentStep / totalSteps) * 100, 100); // Ensure it doesn't exceed 100%
+
+  // Debug logging
+  console.log(`Current step: ${currentStep}, Total steps: ${totalSteps}, Progress: ${progress}%`);
 
   const updateFormData = (field: keyof ApplicationFormData, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -304,7 +307,7 @@ export default function MultiStepApplicationForm() {
       console.error("Error uploading file:", error);
 
       const errorObj = error as { statusCode?: number };
-      
+
       if (errorObj?.statusCode === 403) {
         toast.error(
           "Upload failed: Storage permissions not configured. Please contact support."
@@ -1345,17 +1348,21 @@ export default function MultiStepApplicationForm() {
                   className="bg-blue-600 hover:bg-blue-700 text-white order-1 sm:order-2"
                 >
                   {currentStep === 1
-                    ? "Personal Information"
-                    : currentStep === 2
-                    ? "Contact Information"
-                    : currentStep === 3
                     ? "Education & Experience"
+                    : currentStep === 2
+                    ? "Employment History"
+                    : currentStep === 3
+                    ? "Professional References"
                     : currentStep === 4
-                    ? "Skills & Availability"
+                    ? "Emergency Contact"
                     : currentStep === 5
-                    ? "Background & References"
+                    ? "Legal Information"
                     : currentStep === 6
-                    ? "Documents & Agreements"
+                    ? "Credentials & Skills"
+                    : currentStep === 7
+                    ? "Document Uploads"
+                    : currentStep === 8
+                    ? "Final Declaration"
                     : "Submit Application"}
                   <ChevronRight className="h-4 w-4 ml-2" />
                 </Button>
