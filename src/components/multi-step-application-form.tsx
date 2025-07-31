@@ -303,11 +303,13 @@ export default function MultiStepApplicationForm() {
     } catch (error: unknown) {
       console.error("Error uploading file:", error);
 
-      if (error?.statusCode === 403) {
+      const errorObj = error as { statusCode?: number };
+      
+      if (errorObj?.statusCode === 403) {
         toast.error(
           "Upload failed: Storage permissions not configured. Please contact support."
         );
-      } else if (error?.statusCode === 400) {
+      } else if (errorObj?.statusCode === 400) {
         toast.error(
           "Upload failed: Invalid file or file too large. Please try again."
         );

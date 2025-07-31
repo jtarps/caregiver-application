@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -185,11 +185,9 @@ const initialAssessmentData: AssessmentData = {
   special_notes: "",
 };
 
-export default function PSWCompetencyAssessment() {
+function PSWCompetencyAssessmentContent() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [assessmentData, setAssessmentData] = useState<AssessmentData>(
-    initialAssessmentData
-  );
+  const [assessmentData, setAssessmentData] = useState<AssessmentData>(initialAssessmentData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [assessmentId, setAssessmentId] = useState<string>("");
 
@@ -197,6 +195,7 @@ export default function PSWCompetencyAssessment() {
   const progress = (currentStep / totalSteps) * 100;
 
   const searchParams = useSearchParams();
+  const caregiverApplicationId = searchParams.get("applicationId");
 
   // Generate unique assessment ID when component mounts
   React.useEffect(() => {
@@ -212,7 +211,7 @@ export default function PSWCompetencyAssessment() {
   }, []);
 
   // Get application ID from URL if available
-  const caregiverApplicationId = searchParams.get("applicationId");
+  // const caregiverApplicationId = searchParams.get("applicationId"); // Moved outside useEffect
 
   const updateAssessmentData = (field: keyof AssessmentData, value: string) => {
     setAssessmentData((prev) => ({ ...prev, [field]: value }));
@@ -1528,5 +1527,24 @@ export default function PSWCompetencyAssessment() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function PSWCompetencyAssessment() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-4 px-4 sm:py-8">
+        <div className="max-w-4xl mx-auto">
+          <Card className="border-2 border-blue-100 shadow-lg">
+            <CardContent className="p-8 text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading assessment...</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    }>
+      <PSWCompetencyAssessmentContent />
+    </Suspense>
   );
 }

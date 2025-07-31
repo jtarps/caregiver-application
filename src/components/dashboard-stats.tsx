@@ -16,6 +16,8 @@ interface Application {
   id: string;
   status: string;
   created_at: string;
+  experience_years?: number;
+  hourly_rate_expectation?: number;
 }
 
 interface DashboardStatsProps {
