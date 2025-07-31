@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import DashboardStats from "@/components/dashboard-stats";
 import {
@@ -15,10 +15,7 @@ import {
   XCircle,
   Clock,
   AlertCircle,
-  ChevronLeft,
   ChevronRight,
-  Phone,
-  Calendar,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -47,20 +44,12 @@ export default function AdminPortal() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [reviewNotes, setReviewNotes] = useState("");
 
-  useEffect(() => {
-    fetchApplications();
-  }, []);
-
-  useEffect(() => {
-    filterApplications();
-  }, [applications, searchTerm, statusFilter]);
-
-  const fetchApplications = async () => {
+  const fetchApplications = useCallback(async () => {
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from("caregiver_applications")
-        .select("*")
-        .order("created_at", { ascending: false });
+        .select("id, application_id, first_name, last_name, email, phone, status, created_at, updated_at");
 
       if (error) {
         console.error("Error fetching applications:", error);
@@ -69,15 +58,15 @@ export default function AdminPortal() {
       }
 
       setApplications(data || []);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error fetching applications:", error);
       toast.error("Failed to fetch applications");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const filterApplications = () => {
+  const filterApplications = useCallback(() => {
     let filtered = applications;
 
     // Apply search filter
@@ -86,8 +75,7 @@ export default function AdminPortal() {
         (app) =>
           app.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           app.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          app.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          app.phone.includes(searchTerm)
+          app.email.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -95,9 +83,16 @@ export default function AdminPortal() {
     if (statusFilter !== "all") {
       filtered = filtered.filter((app) => app.status === statusFilter);
     }
-
     setFilteredApplications(filtered);
-  };
+  }, [applications, searchTerm, statusFilter]);
+
+  useEffect(() => {
+    fetchApplications();
+  }, [fetchApplications]);
+
+  useEffect(() => {
+    filterApplications();
+  }, [filterApplications]);
 
   const updateApplicationStatus = async (
     applicationId: string,
@@ -250,7 +245,9 @@ export default function AdminPortal() {
                           </div>
                           <div className="flex items-center space-x-2">
                             <Badge
-                              className={`${getStatusColor(application.status)} text-xs`}
+                              className={`${getStatusColor(
+                                application.status
+                              )} text-xs`}
                             >
                               {getStatusIcon(application.status)}
                               <span className="ml-1 capitalize">
@@ -320,7 +317,9 @@ export default function AdminPortal() {
                         Status
                       </Label>
                       <Badge
-                        className={`${getStatusColor(selectedApplication.status)} text-xs`}
+                        className={`${getStatusColor(
+                          selectedApplication.status
+                        )} text-xs`}
                       >
                         {getStatusIcon(selectedApplication.status)}
                         <span className="ml-1 capitalize">
@@ -419,7 +418,9 @@ export default function AdminPortal() {
                 <CardContent className="p-4 sm:p-6">
                   <div className="text-center text-gray-500">
                     <Eye className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-4 text-gray-300" />
-                    <p className="text-sm sm:text-base">Select an application to view details</p>
+                    <p className="text-sm sm:text-base">
+                      Select an application to view details
+                    </p>
                   </div>
                 </CardContent>
               </Card>

@@ -19,9 +19,9 @@ export default function PSWAssessmentPage() {
               </div>
               <p className="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base">
                 Complete this comprehensive assessment to evaluate your personal
-                support worker competencies. This helps us understand your comfort
-                level with various caregiving tasks and identify areas where you
-                may need additional training or support.
+                support worker competencies. This helps us understand your
+                comfort level with various caregiving tasks and identify areas
+                where you may need additional training or support.
               </p>
             </div>
             <PSWCompetencyAssessment />

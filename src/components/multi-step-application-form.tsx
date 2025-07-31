@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +15,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, X, Upload, FileText, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Plus,
+  X,
+  Upload,
+  FileText,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -159,15 +166,6 @@ const initialFormData: ApplicationFormData = {
   signatureDate: "",
 };
 
-const sourceOptions = [
-  "Website",
-  "Social Media",
-  "Job Board",
-  "Referral",
-  "Advertisement",
-  "Other",
-];
-
 const documentTypes = [
   { key: "driversLicense", label: "Driver's License (Front + License Number)" },
   { key: "workPermit", label: "Work Permit (if applicable)" },
@@ -209,36 +207,25 @@ export default function MultiStepApplicationForm() {
   const totalSteps = 9;
   const progress = (currentStep / totalSteps) * 100;
 
-  const updateFormData = (field: keyof ApplicationFormData, value: any) => {
+  const updateFormData = (field: keyof ApplicationFormData, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const regenerateApplicationId = () => {
-    const generateNewId = () => {
-      const timestamp = Date.now();
-      const randomStr = Math.random().toString(36).substring(2, 15);
-      const sessionId = Math.random().toString(36).substring(2, 8);
-      return `haven_${timestamp}_${randomStr}_${sessionId}`;
-    };
-
-    const newId = generateNewId();
-    setApplicationId(newId);
-    toast.success("Application ID regenerated successfully");
-  };
-
   const addEmploymentHistory = () => {
-    const newEmployment: EmploymentHistory = {
-      companyName: "",
-      startDate: "",
-      endDate: "",
-      jobTitle: "",
-      responsibilities: "",
-      reasonForLeaving: "",
-    };
-    updateFormData("employmentHistory", [
-      ...formData.employmentHistory,
-      newEmployment,
-    ]);
+    setFormData((prev) => ({
+      ...prev,
+      employmentHistory: [
+        ...prev.employmentHistory,
+        {
+          companyName: "",
+          startDate: "",
+          endDate: "",
+          jobTitle: "",
+          responsibilities: "",
+          reasonForLeaving: "",
+        },
+      ],
+    }));
   };
 
   const updateEmploymentHistory = (
@@ -589,8 +576,8 @@ export default function MultiStepApplicationForm() {
           <Label htmlFor="firstName">First Name *</Label>
           <Input
             id="firstName"
-            value={formData.first_name}
-            onChange={(e) => updateFormData("first_name", e.target.value)}
+            value={formData.firstName}
+            onChange={(e) => updateFormData("firstName", e.target.value)}
             placeholder="First Name"
             required
             className="mt-1"
@@ -600,8 +587,8 @@ export default function MultiStepApplicationForm() {
           <Label htmlFor="lastName">Last Name *</Label>
           <Input
             id="lastName"
-            value={formData.last_name}
-            onChange={(e) => updateFormData("last_name", e.target.value)}
+            value={formData.lastName}
+            onChange={(e) => updateFormData("lastName", e.target.value)}
             placeholder="Last Name"
             required
             className="mt-1"
@@ -646,8 +633,8 @@ export default function MultiStepApplicationForm() {
           <Input
             id="dateOfBirth"
             type="date"
-            value={formData.date_of_birth}
-            onChange={(e) => updateFormData("date_of_birth", e.target.value)}
+            value={formData.dateOfBirth}
+            onChange={(e) => updateFormData("dateOfBirth", e.target.value)}
             required
             className="mt-1"
           />
@@ -656,8 +643,10 @@ export default function MultiStepApplicationForm() {
           <Label htmlFor="sin">Social Insurance Number *</Label>
           <Input
             id="sin"
-            value={formData.social_insurance_number}
-            onChange={(e) => updateFormData("social_insurance_number", e.target.value)}
+            value={formData.socialInsuranceNumber}
+            onChange={(e) =>
+              updateFormData("socialInsuranceNumber", e.target.value)
+            }
             placeholder="XXX-XXX-XXX"
             required
             className="mt-1"
@@ -1322,7 +1311,9 @@ export default function MultiStepApplicationForm() {
           <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
             <div className="text-center">
               <h2 className="text-xl sm:text-2xl font-bold">Haven at Home</h2>
-              <p className="text-blue-100 text-sm sm:text-base">Caregiver Application Form</p>
+              <p className="text-blue-100 text-sm sm:text-base">
+                Caregiver Application Form
+              </p>
             </div>
             <div className="space-y-2 mt-4">
               <div className="flex justify-between text-sm text-blue-100">
