@@ -15,7 +15,7 @@ import {
   ChevronRight,
   ChevronLeft,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
 
@@ -404,11 +404,13 @@ function PSWCompetencyAssessmentContent() {
       console.log("Assessment data:", assessmentPayload);
 
       // Check if Supabase is configured
-      if (
-        !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-        !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-      ) {
+      if (!isSupabaseConfigured()) {
         toast.error("Database not configured. Please contact support.");
+        return;
+      }
+
+      if (!supabase) {
+        toast.error("Database connection failed. Please try again.");
         return;
       }
 

@@ -16,7 +16,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -201,7 +201,9 @@ export default function MultiStepApplicationForm() {
   const progress = Math.min((currentStep / totalSteps) * 100, 100); // Ensure it doesn't exceed 100%
 
   // Debug logging
-  console.log(`Current step: ${currentStep}, Total steps: ${totalSteps}, Progress: ${progress}%`);
+  console.log(
+    `Current step: ${currentStep}, Total steps: ${totalSteps}, Progress: ${progress}%`
+  );
 
   const updateFormData = (field: keyof ApplicationFormData, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -278,6 +280,16 @@ export default function MultiStepApplicationForm() {
 
     if (!applicationId) {
       toast.error("Application ID not ready. Please try again.");
+      return;
+    }
+
+    if (!isSupabaseConfigured()) {
+      toast.error("Database not configured. Please contact support.");
+      return;
+    }
+
+    if (!supabase) {
+      toast.error("Database connection failed. Please try again.");
       return;
     }
 
@@ -468,11 +480,13 @@ export default function MultiStepApplicationForm() {
       console.log("Application data:", applicationData);
 
       // Check if Supabase is configured
-      if (
-        !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-        !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-      ) {
+      if (!isSupabaseConfigured()) {
         toast.error("Database not configured. Please contact support.");
+        return;
+      }
+
+      if (!supabase) {
+        toast.error("Database connection failed. Please try again.");
         return;
       }
 

@@ -17,7 +17,7 @@ import {
   AlertCircle,
   ChevronRight,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { toast } from "sonner";
 
 interface Application {
@@ -47,6 +47,16 @@ export default function AdminPortal() {
   const fetchApplications = useCallback(async () => {
     setLoading(true);
     try {
+      if (!isSupabaseConfigured()) {
+        toast.error("Database not configured. Please contact support.");
+        return;
+      }
+
+      if (!supabase) {
+        toast.error("Database connection failed. Please try again.");
+        return;
+      }
+
       const { data, error } = await supabase
         .from("caregiver_applications")
         .select(
@@ -101,14 +111,24 @@ export default function AdminPortal() {
     newStatus: string
   ) => {
     try {
+      if (!isSupabaseConfigured()) {
+        toast.error("Database not configured. Please contact support.");
+        return;
+      }
+
+      if (!supabase) {
+        toast.error("Database connection failed. Please try again.");
+        return;
+      }
+
       const { error } = await supabase
         .from("caregiver_applications")
         .update({ status: newStatus, updated_at: new Date().toISOString() })
         .eq("id", applicationId);
 
       if (error) {
-        console.error("Error updating application:", error);
-        toast.error("Failed to update application status");
+        console.error("Database error updating status:", error);
+        toast.error(`Failed to update status: ${error.message}`);
         return;
       }
 
@@ -120,7 +140,7 @@ export default function AdminPortal() {
       );
 
       toast.success("Application status updated successfully");
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error updating application:", error);
       toast.error("Failed to update application status");
     }
