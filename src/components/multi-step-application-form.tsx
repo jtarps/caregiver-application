@@ -19,80 +19,80 @@ import {
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 
 // Types for form data
-interface EmploymentHistory {
-  companyName: string;
-  startDate: string;
-  endDate: string;
+interface WorkExperience {
+  employerName: string;
+  employerPhone: string;
+  isCurrentlyWorking: boolean;
+  mayContact: boolean;
   jobTitle: string;
-  responsibilities: string;
+  duration: string;
   reasonForLeaving: string;
 }
 
-interface ProfessionalReference {
-  fullName: string;
-  phone: string;
-  email: string;
-  positionAndCompany: string;
-}
-
-interface DocumentUpload {
-  type: string;
-  file: File;
-  url?: string;
-}
-
 interface ApplicationFormData {
-  // Step 1: Personal Information
+  // Step 1: Basic Info
   firstName: string;
   lastName: string;
-  address: string;
-  phone: string;
   email: string;
-  dateOfBirth: string;
-  socialInsuranceNumber: string;
-  hasDriverLicense: boolean;
-  legallyEligibleEmployment: boolean;
-  weeklyAvailability: number;
-  previouslyApplied: boolean;
-  sourceOfInformation: string;
+  phone: string;
 
-  // Step 2: Education & Experience
-  completedProgram: string;
-  schoolAttended: string;
-  experienceYears: number;
-  certifications: string[];
-  specializations: string[];
+  // Step 2: Upload Documents
+  resume: File | null;
+  cprCertificate: File | null;
+  pswCertificate: File | null;
+  additionalCertifications: File | null;
+
+  // Step 3: Quick Eligibility Check
+  legallyEligibleCanada: boolean;
+  age18OrOlder: boolean;
+  hasDriverLicense: boolean;
+  hasReliableCar: boolean;
+  canLiveInCare: boolean;
+  isInternationalStudent: boolean;
+  previouslyApplied: boolean;
+  canPerformDuties: boolean;
+
+  // Step 4: Qualifications
+  hasPSWCertificate: boolean;
+  completedPlacementHours: boolean;
+  hasCPRFirstAid: boolean;
+  isCanadianRN: boolean;
+  isRNStudent: boolean;
+  isForeignRN: boolean;
+
+  // Step 5: Criminal & Physical Fitness
+  criminalConviction5Years: boolean;
+  criminalConvictionDetails: string;
+  physicallyCapable: boolean;
+  physicalLimitations: string;
+
+  // Step 6: Languages
   languages: string[];
 
-  // Step 3: Employment History
-  employmentHistory: EmploymentHistory[];
+  // Step 7: Work Experience
+  hasCaregivingExperience: boolean;
+  workExperience: WorkExperience[];
 
-  // Step 4: Professional References
-  professionalReferences: ProfessionalReference[];
+  // Step 8: Availability
+  workTypes: string[];
+  availableDays: string[];
+  availableMornings: boolean;
+  availableAfternoons: boolean;
+  availableEvenings: boolean;
+  availableOvernight: boolean;
+  availableWeekends: boolean;
+  availableHolidays: boolean;
+  preferredShiftLength: string;
+  startDate: string;
+  startDateOther: string;
+  hoursPerWeek: string;
+  preferredLocations: string[];
 
-  // Step 5: Emergency Contact
-  emergencyContactName: string;
-  emergencyContactPhone: string;
-
-  // Step 6: General & Legal
-  criminalConvictionLast5Years: boolean;
-  criminalConvictionDetails: string;
-  abilityPerformJobRequirements: boolean;
-  abilityPerformDetails: string;
-
-  // Step 7: Credentials & Skills
-  specializedSkills: string;
-  operatedEquipment: string;
-  hourlyRateExpectation: number;
-  whyInterested: string;
-  previousExperience: string;
-
-  // Step 8: Document Uploads
-  documents: DocumentUpload[];
-
-  // Step 9: Final Declaration
+  // Final Declarations
   certificationTruthfulness: boolean;
   authorizationBackgroundCheck: boolean;
   understandingAtWillEmployment: boolean;
@@ -102,55 +102,65 @@ interface ApplicationFormData {
 }
 
 const initialFormData: ApplicationFormData = {
-  // Step 1: Personal Information
+  // Step 1: Basic Info
   firstName: "",
   lastName: "",
-  address: "",
-  phone: "",
   email: "",
-  dateOfBirth: "",
-  socialInsuranceNumber: "",
-  hasDriverLicense: false,
-  legallyEligibleEmployment: false,
-  weeklyAvailability: 0,
-  previouslyApplied: false,
-  sourceOfInformation: "",
+  phone: "",
 
-  // Step 2: Education & Experience
-  completedProgram: "",
-  schoolAttended: "",
-  experienceYears: 0,
-  certifications: [],
-  specializations: [],
+  // Step 2: Upload Documents
+  resume: null,
+  cprCertificate: null,
+  pswCertificate: null,
+  additionalCertifications: null,
+
+  // Step 3: Quick Eligibility Check
+  legallyEligibleCanada: false,
+  age18OrOlder: false,
+  hasDriverLicense: false,
+  hasReliableCar: false,
+  canLiveInCare: false,
+  isInternationalStudent: false,
+  previouslyApplied: false,
+  canPerformDuties: false,
+
+  // Step 4: Qualifications
+  hasPSWCertificate: false,
+  completedPlacementHours: false,
+  hasCPRFirstAid: false,
+  isCanadianRN: false,
+  isRNStudent: false,
+  isForeignRN: false,
+
+  // Step 5: Criminal & Physical Fitness
+  criminalConviction5Years: false,
+  criminalConvictionDetails: "",
+  physicallyCapable: false,
+  physicalLimitations: "",
+
+  // Step 6: Languages
   languages: [],
 
-  // Step 3: Employment History
-  employmentHistory: [],
+  // Step 7: Work Experience
+  hasCaregivingExperience: false,
+  workExperience: [],
 
-  // Step 4: Professional References
-  professionalReferences: [],
+  // Step 8: Availability
+  workTypes: [],
+  availableDays: [],
+  availableMornings: false,
+  availableAfternoons: false,
+  availableEvenings: false,
+  availableOvernight: false,
+  availableWeekends: false,
+  availableHolidays: false,
+  preferredShiftLength: "",
+  startDate: "",
+  startDateOther: "",
+  hoursPerWeek: "",
+  preferredLocations: [],
 
-  // Step 5: Emergency Contact
-  emergencyContactName: "",
-  emergencyContactPhone: "",
-
-  // Step 6: General & Legal
-  criminalConvictionLast5Years: false,
-  criminalConvictionDetails: "",
-  abilityPerformJobRequirements: false,
-  abilityPerformDetails: "",
-
-  // Step 7: Credentials & Skills
-  specializedSkills: "",
-  operatedEquipment: "",
-  hourlyRateExpectation: 0,
-  whyInterested: "",
-  previousExperience: "",
-
-  // Step 8: Document Uploads
-  documents: [],
-
-  // Step 9: Final Declaration
+  // Final Declarations
   certificationTruthfulness: false,
   authorizationBackgroundCheck: false,
   understandingAtWillEmployment: false,
@@ -197,7 +207,7 @@ export default function MultiStepApplicationForm() {
     setApplicationId(id);
   }, []);
 
-  const totalSteps = 9;
+  const totalSteps = 8;
   const progress = Math.min((currentStep / totalSteps) * 100, 100); // Ensure it doesn't exceed 100%
 
   // Debug logging
@@ -209,129 +219,37 @@ export default function MultiStepApplicationForm() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const addEmploymentHistory = () => {
+  const addWorkExperience = () => {
     setFormData((prev) => ({
       ...prev,
-      employmentHistory: [
-        ...prev.employmentHistory,
+      workExperience: [
+        ...prev.workExperience,
         {
-          companyName: "",
-          startDate: "",
-          endDate: "",
+          employerName: "",
+          employerPhone: "",
+          isCurrentlyWorking: false,
+          mayContact: false,
           jobTitle: "",
-          responsibilities: "",
+          duration: "",
           reasonForLeaving: "",
         },
       ],
     }));
   };
 
-  const updateEmploymentHistory = (
+  const updateWorkExperience = (
     index: number,
-    field: keyof EmploymentHistory,
-    value: string
+    field: keyof WorkExperience,
+    value: string | boolean
   ) => {
-    const updated = [...formData.employmentHistory];
+    const updated = [...formData.workExperience];
     updated[index] = { ...updated[index], [field]: value };
-    updateFormData("employmentHistory", updated);
+    updateFormData("workExperience", updated);
   };
 
-  const removeEmploymentHistory = (index: number) => {
-    const updated = formData.employmentHistory.filter((_, i) => i !== index);
-    updateFormData("employmentHistory", updated);
-  };
-
-  const addProfessionalReference = () => {
-    const newReference: ProfessionalReference = {
-      fullName: "",
-      phone: "",
-      email: "",
-      positionAndCompany: "",
-    };
-    updateFormData("professionalReferences", [
-      ...formData.professionalReferences,
-      newReference,
-    ]);
-  };
-
-  const updateProfessionalReference = (
-    index: number,
-    field: keyof ProfessionalReference,
-    value: string
-  ) => {
-    const updated = [...formData.professionalReferences];
-    updated[index] = { ...updated[index], [field]: value };
-    updateFormData("professionalReferences", updated);
-  };
-
-  const removeProfessionalReference = (index: number) => {
-    const updated = formData.professionalReferences.filter(
-      (_, i) => i !== index
-    );
-    updateFormData("professionalReferences", updated);
-  };
-
-  const handleFileUpload = async (type: string, file: File) => {
-    if (file.size > 2 * 1024 * 1024) {
-      // 2MB limit
-      toast.error("File size must be less than 2MB");
-      return;
-    }
-
-    if (!applicationId) {
-      toast.error("Application ID not ready. Please try again.");
-      return;
-    }
-
-    if (!isSupabaseConfigured()) {
-      toast.error("Database not configured. Please contact support.");
-      return;
-    }
-
-    if (!supabase) {
-      toast.error("Database connection failed. Please try again.");
-      return;
-    }
-
-    try {
-      const fileName = `${Date.now()}-${file.name}`;
-      const filePath = `applications/${applicationId}/${fileName}`;
-
-      const { data, error } = await supabase.storage
-        .from("caregiver-documents")
-        .upload(filePath, file);
-
-      if (error) throw error;
-
-      const { data: publicUrlData } = supabase.storage
-        .from("caregiver-documents")
-        .getPublicUrl(data.path);
-
-      const newDocument: DocumentUpload = {
-        type,
-        file,
-        url: publicUrlData.publicUrl,
-      };
-
-      updateFormData("documents", [...formData.documents, newDocument]);
-      toast.success("Document uploaded successfully");
-    } catch (error: unknown) {
-      console.error("Error uploading file:", error);
-
-      const errorObj = error as { statusCode?: number };
-
-      if (errorObj?.statusCode === 403) {
-        toast.error(
-          "Upload failed: Storage permissions not configured. Please contact support."
-        );
-      } else if (errorObj?.statusCode === 400) {
-        toast.error(
-          "Upload failed: Invalid file or file too large. Please try again."
-        );
-      } else {
-        toast.error("Failed to upload document. Please try again.");
-      }
-    }
+  const removeWorkExperience = (index: number) => {
+    const updated = formData.workExperience.filter((_, i) => i !== index);
+    updateFormData("workExperience", updated);
   };
 
   const validateStep = (step: number): boolean => {
@@ -341,41 +259,30 @@ export default function MultiStepApplicationForm() {
           formData.firstName &&
           formData.lastName &&
           formData.email &&
-          formData.phone &&
-          formData.address
+          formData.phone
         );
       case 2:
-        return !!(
-          formData.completedProgram &&
-          formData.schoolAttended &&
-          formData.experienceYears > 0
-        );
+        return !!formData.resume; // Resume is required
       case 3:
-        return (
-          formData.employmentHistory.length > 0 &&
-          formData.employmentHistory.every(
-            (emp) => emp.companyName && emp.jobTitle
-          )
+        return !!(
+          formData.legallyEligibleCanada &&
+          formData.age18OrOlder &&
+          formData.canPerformDuties
         );
       case 4:
-        return (
-          formData.professionalReferences.length > 0 &&
-          formData.professionalReferences.every(
-            (ref) => ref.fullName && ref.phone
-          )
-        );
+        return true; // All qualifications are optional
       case 5:
-        return !!(
-          formData.emergencyContactName && formData.emergencyContactPhone
-        );
+        return true; // Criminal and physical fitness are required but can be "no"
       case 6:
-        return true; // Optional fields
+        return formData.languages.length > 0; // At least one language required
       case 7:
-        return true; // Optional fields
+        return true; // Work experience is optional
       case 8:
-        return formData.documents.length > 0; // At least one document required
-      case 9:
         return !!(
+          formData.workTypes.length > 0 &&
+          formData.availableDays.length > 0 &&
+          formData.startDate &&
+          formData.hoursPerWeek &&
           formData.certificationTruthfulness &&
           formData.authorizationBackgroundCheck &&
           formData.understandingAtWillEmployment &&
@@ -424,53 +331,63 @@ export default function MultiStepApplicationForm() {
 
     try {
       const applicationData = {
-        application_id: applicationId, // Add the unique application ID
+        application_id: applicationId,
         first_name: formData.firstName,
         last_name: formData.lastName,
         email: formData.email,
         phone: formData.phone,
-        address: formData.address,
-        city: "", // Will be extracted from address
-        postal_code: "", // Will be extracted from address
-        date_of_birth: formData.dateOfBirth,
-        social_insurance_number: formData.socialInsuranceNumber,
+        
+        // Step 3: Quick Eligibility Check
+        legally_eligible_canada: formData.legallyEligibleCanada,
+        age_18_or_older: formData.age18OrOlder,
         has_driver_license: formData.hasDriverLicense,
-        legally_eligible_employment: formData.legallyEligibleEmployment,
-        weekly_availability: formData.weeklyAvailability,
+        has_reliable_car: formData.hasReliableCar,
+        can_live_in_care: formData.canLiveInCare,
+        is_international_student: formData.isInternationalStudent,
         previously_applied: formData.previouslyApplied,
-        source_of_information: formData.sourceOfInformation,
-        completed_program: formData.completedProgram,
-        school_attended: formData.schoolAttended,
-        experience_years: formData.experienceYears,
-        certifications: formData.certifications,
-        specializations: formData.specializations,
-        languages: formData.languages,
-        employment_history: formData.employmentHistory,
-        professional_references: formData.professionalReferences,
-        emergency_contact_name: formData.emergencyContactName,
-        emergency_contact_phone: formData.emergencyContactPhone,
-        criminal_conviction_last_5_years: formData.criminalConvictionLast5Years,
+        can_perform_duties: formData.canPerformDuties,
+
+        // Step 4: Qualifications
+        has_psw_certificate: formData.hasPSWCertificate,
+        completed_placement_hours: formData.completedPlacementHours,
+        has_cpr_first_aid: formData.hasCPRFirstAid,
+        is_canadian_rn: formData.isCanadianRN,
+        is_rn_student: formData.isRNStudent,
+        is_foreign_rn: formData.isForeignRN,
+
+        // Step 5: Criminal & Physical Fitness
+        criminal_conviction_5_years: formData.criminalConviction5Years,
         criminal_conviction_details: formData.criminalConvictionDetails,
-        ability_perform_job_requirements:
-          formData.abilityPerformJobRequirements,
-        ability_perform_details: formData.abilityPerformDetails,
-        specialized_skills: formData.specializedSkills,
-        operated_equipment: formData.operatedEquipment,
-        hourly_rate_expectation: formData.hourlyRateExpectation,
-        why_interested: formData.whyInterested,
-        previous_experience: formData.previousExperience,
-        documents: formData.documents.map((doc) => ({
-          type: doc.type,
-          url: doc.url,
-          filename: doc.file.name,
-          uploaded_at: new Date().toISOString(),
-        })),
+        physically_capable: formData.physicallyCapable,
+        physical_limitations: formData.physicalLimitations,
+
+        // Step 6: Languages
+        languages: formData.languages,
+
+        // Step 7: Work Experience
+        has_caregiving_experience: formData.hasCaregivingExperience,
+        work_experience: formData.workExperience,
+
+        // Step 8: Availability
+        work_types: formData.workTypes,
+        available_days: formData.availableDays,
+        available_mornings: formData.availableMornings,
+        available_afternoons: formData.availableAfternoons,
+        available_evenings: formData.availableEvenings,
+        available_overnight: formData.availableOvernight,
+        available_weekends: formData.availableWeekends,
+        available_holidays: formData.availableHolidays,
+        preferred_shift_length: formData.preferredShiftLength,
+        start_date: formData.startDate,
+        start_date_other: formData.startDateOther,
+        hours_per_week: formData.hoursPerWeek,
+        preferred_locations: formData.preferredLocations,
+
+        // Final Declarations
         certification_truthfulness: formData.certificationTruthfulness,
         authorization_background_check: formData.authorizationBackgroundCheck,
-        understanding_at_will_employment:
-          formData.understandingAtWillEmployment,
-        acknowledgment_application_validity:
-          formData.acknowledgmentApplicationValidity,
+        understanding_at_will_employment: formData.understandingAtWillEmployment,
+        acknowledgment_application_validity: formData.acknowledgmentApplicationValidity,
         digital_signature: formData.digitalSignature,
         signature_date: formData.signatureDate,
         status: "pending",
@@ -577,10 +494,10 @@ export default function MultiStepApplicationForm() {
   const renderStep1 = () => (
     <div className="space-y-6">
       <h3 className="text-lg sm:text-xl font-semibold text-blue-900 border-b-2 border-blue-200 pb-2">
-        Personal Information
+        Basic Info
       </h3>
       <p className="text-gray-600 text-sm sm:text-base">
-        Please provide your personal information. All fields marked with an
+        Please provide your basic information. All fields marked with an
         asterisk (*) are required.
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -629,41 +546,6 @@ export default function MultiStepApplicationForm() {
             className="mt-1"
           />
         </div>
-        <div className="sm:col-span-2">
-          <Label htmlFor="address">Address *</Label>
-          <Input
-            id="address"
-            value={formData.address}
-            onChange={(e) => updateFormData("address", e.target.value)}
-            placeholder="Full Address"
-            required
-            className="mt-1"
-          />
-        </div>
-        <div>
-          <Label htmlFor="dateOfBirth">Date of Birth *</Label>
-          <Input
-            id="dateOfBirth"
-            type="date"
-            value={formData.dateOfBirth}
-            onChange={(e) => updateFormData("dateOfBirth", e.target.value)}
-            required
-            className="mt-1"
-          />
-        </div>
-        <div>
-          <Label htmlFor="sin">Social Insurance Number *</Label>
-          <Input
-            id="sin"
-            value={formData.socialInsuranceNumber}
-            onChange={(e) =>
-              updateFormData("socialInsuranceNumber", e.target.value)
-            }
-            placeholder="XXX-XXX-XXX"
-            required
-            className="mt-1"
-          />
-        </div>
       </div>
     </div>
   );
@@ -671,84 +553,70 @@ export default function MultiStepApplicationForm() {
   const renderStep2 = () => (
     <div className="space-y-6">
       <h3 className="text-xl font-semibold text-blue-900 border-b-2 border-blue-200 pb-2">
-        Education & Experience
+        Upload Documents
       </h3>
+      <p className="text-gray-600 text-sm">
+        Please upload your documents. Resume is required, other documents are optional.
+      </p>
+      
       <div className="space-y-4">
         <div>
-          <Label htmlFor="completedProgram">Completed Program *</Label>
+          <Label htmlFor="resume">Upload Resume *</Label>
           <Input
-            id="completedProgram"
-            value={formData.completedProgram}
-            onChange={(e) => updateFormData("completedProgram", e.target.value)}
-            placeholder="e.g., PSW Certificate, Nursing Diploma"
+            id="resume"
+            type="file"
+            accept=".pdf,.doc,.docx"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) updateFormData("resume", file);
+            }}
+            className="mt-1"
             required
           />
+          <p className="text-xs text-gray-500 mt-1">
+            Accepted formats: PDF, DOC, DOCX
+          </p>
         </div>
+
         <div>
-          <Label htmlFor="schoolAttended">School Attended *</Label>
+          <Label htmlFor="cprCertificate">Upload CPR/First Aid Certificate (Optional)</Label>
           <Input
-            id="schoolAttended"
-            value={formData.schoolAttended}
-            onChange={(e) => updateFormData("schoolAttended", e.target.value)}
-            placeholder="Institution name"
-            required
+            id="cprCertificate"
+            type="file"
+            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) updateFormData("cprCertificate", file);
+            }}
+            className="mt-1"
           />
         </div>
+
         <div>
-          <Label htmlFor="experienceYears">Years of Experience *</Label>
+          <Label htmlFor="pswCertificate">Upload PSW or other Caregiving Certificate (Optional)</Label>
           <Input
-            id="experienceYears"
-            type="number"
-            min="0"
-            max="50"
-            value={formData.experienceYears}
-            onChange={(e) =>
-              updateFormData("experienceYears", parseInt(e.target.value) || 0)
-            }
-            placeholder="Number of years"
-            required
+            id="pswCertificate"
+            type="file"
+            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) updateFormData("pswCertificate", file);
+            }}
+            className="mt-1"
           />
         </div>
+
         <div>
-          <Label htmlFor="certifications">Certifications</Label>
-          <Textarea
-            id="certifications"
-            value={rawCertifications}
+          <Label htmlFor="additionalCertifications">Upload Additional Certifications (Optional)</Label>
+          <Input
+            id="additionalCertifications"
+            type="file"
+            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
             onChange={(e) => {
-              const value = e.target.value;
-              setRawCertifications(value);
-              const items = value.split(",").map((item) => item.trim());
-              updateFormData("certifications", items);
+              const file = e.target.files?.[0];
+              if (file) updateFormData("additionalCertifications", file);
             }}
-            placeholder="e.g., CPR, First Aid, PSW Certificate (separate with commas)"
-          />
-        </div>
-        <div>
-          <Label htmlFor="specializations">Specializations</Label>
-          <Textarea
-            id="specializations"
-            value={rawSpecializations}
-            onChange={(e) => {
-              const value = e.target.value;
-              setRawSpecializations(value);
-              const items = value.split(",").map((item) => item.trim());
-              updateFormData("specializations", items);
-            }}
-            placeholder="e.g., Dementia Care, Palliative Care, Pediatric Care (separate with commas)"
-          />
-        </div>
-        <div>
-          <Label htmlFor="languages">Languages Spoken</Label>
-          <Textarea
-            id="languages"
-            value={rawLanguages}
-            onChange={(e) => {
-              const value = e.target.value;
-              setRawLanguages(value);
-              const items = value.split(",").map((item) => item.trim());
-              updateFormData("languages", items);
-            }}
-            placeholder="e.g., English, French, Spanish (separate with commas)"
+            className="mt-1"
           />
         </div>
       </div>
@@ -758,122 +626,129 @@ export default function MultiStepApplicationForm() {
   const renderStep3 = () => (
     <div className="space-y-6">
       <h3 className="text-xl font-semibold text-blue-900 border-b-2 border-blue-200 pb-2">
-        Employment History
+        Quick Eligibility Check
       </h3>
-      <div className="space-y-6">
-        {formData.employmentHistory.map((employment, index) => (
-          <Card key={index}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Employment #{index + 1}
-              </CardTitle>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => removeEmploymentHistory(index)}
-                className="text-red-600 hover:text-red-700"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label>Company Name *</Label>
-                  <Input
-                    value={employment.companyName}
-                    onChange={(e) =>
-                      updateEmploymentHistory(
-                        index,
-                        "companyName",
-                        e.target.value
-                      )
-                    }
-                    placeholder="Company name"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label>Job Title *</Label>
-                  <Input
-                    value={employment.jobTitle}
-                    onChange={(e) =>
-                      updateEmploymentHistory(index, "jobTitle", e.target.value)
-                    }
-                    placeholder="Job title"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label>Start Date</Label>
-                  <Input
-                    type="date"
-                    min="1900-01-01"
-                    max={new Date().toISOString().split("T")[0]}
-                    value={employment.startDate}
-                    onChange={(e) =>
-                      updateEmploymentHistory(
-                        index,
-                        "startDate",
-                        e.target.value
-                      )
-                    }
-                  />
-                </div>
-                <div>
-                  <Label>End Date</Label>
-                  <Input
-                    type="date"
-                    min="1900-01-01"
-                    max={new Date().toISOString().split("T")[0]}
-                    value={employment.endDate}
-                    onChange={(e) =>
-                      updateEmploymentHistory(index, "endDate", e.target.value)
-                    }
-                  />
-                </div>
-              </div>
-              <div>
-                <Label>Job Responsibilities</Label>
-                <Textarea
-                  value={employment.responsibilities}
-                  onChange={(e) =>
-                    updateEmploymentHistory(
-                      index,
-                      "responsibilities",
-                      e.target.value
-                    )
-                  }
-                  placeholder="Describe your responsibilities"
-                  rows={3}
-                />
-              </div>
-              <div>
-                <Label>Reason for Leaving</Label>
-                <Input
-                  value={employment.reasonForLeaving}
-                  onChange={(e) =>
-                    updateEmploymentHistory(
-                      index,
-                      "reasonForLeaving",
-                      e.target.value
-                    )
-                  }
-                  placeholder="Reason for leaving"
-                />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-        <Button
-          type="button"
-          variant="outline"
-          onClick={addEmploymentHistory}
-          className="w-full"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Employment History
-        </Button>
+      <p className="text-gray-600 text-sm">
+        Please answer these questions to help us determine your eligibility.
+      </p>
+      
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="legallyEligibleCanada"
+            checked={formData.legallyEligibleCanada}
+            onCheckedChange={(checked) =>
+              updateFormData("legallyEligibleCanada", checked)
+            }
+          />
+          <Label htmlFor="legallyEligibleCanada">
+            Are you legally eligible to work in Canada?
+          </Label>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="age18OrOlder"
+            checked={formData.age18OrOlder}
+            onCheckedChange={(checked) =>
+              updateFormData("age18OrOlder", checked)
+            }
+          />
+          <Label htmlFor="age18OrOlder">
+            Are you 18 years of age or older?
+          </Label>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="hasDriverLicense"
+            checked={formData.hasDriverLicense}
+            onCheckedChange={(checked) =>
+              updateFormData("hasDriverLicense", checked)
+            }
+          />
+          <Label htmlFor="hasDriverLicense">
+            Do you have a valid driver's license?
+          </Label>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="hasReliableCar"
+            checked={formData.hasReliableCar}
+            onCheckedChange={(checked) =>
+              updateFormData("hasReliableCar", checked)
+            }
+          />
+          <Label htmlFor="hasReliableCar">
+            Do you have access to a reliable car for work?
+          </Label>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="availableWeekends"
+            checked={formData.availableWeekends}
+            onCheckedChange={(checked) =>
+              updateFormData("availableWeekends", checked)
+            }
+          />
+          <Label htmlFor="availableWeekends">
+            Are you available to work weekends?
+          </Label>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="canLiveInCare"
+            checked={formData.canLiveInCare}
+            onCheckedChange={(checked) =>
+              updateFormData("canLiveInCare", checked)
+            }
+          />
+          <Label htmlFor="canLiveInCare">
+            Are you able to work as a live-in caregiver?
+          </Label>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="isInternationalStudent"
+            checked={formData.isInternationalStudent}
+            onCheckedChange={(checked) =>
+              updateFormData("isInternationalStudent", checked)
+            }
+          />
+          <Label htmlFor="isInternationalStudent">
+            Are you currently enrolled as an international student?
+          </Label>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="previouslyApplied"
+            checked={formData.previouslyApplied}
+            onCheckedChange={(checked) =>
+              updateFormData("previouslyApplied", checked)
+            }
+          />
+          <Label htmlFor="previouslyApplied">
+            Have you applied with us before?
+          </Label>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="canPerformDuties"
+            checked={formData.canPerformDuties}
+            onCheckedChange={(checked) =>
+              updateFormData("canPerformDuties", checked)
+            }
+          />
+          <Label htmlFor="canPerformDuties">
+            Are you able to perform the essential duties of this role without accommodations?
+          </Label>
+        </div>
       </div>
     </div>
   );
@@ -881,98 +756,96 @@ export default function MultiStepApplicationForm() {
   const renderStep4 = () => (
     <div className="space-y-6">
       <h3 className="text-xl font-semibold text-blue-900 border-b-2 border-blue-200 pb-2">
-        Professional References
+        Qualifications
       </h3>
-      <div className="space-y-6">
-        {formData.professionalReferences.map((reference, index) => (
-          <Card key={index}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Reference #{index + 1}
-              </CardTitle>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => removeProfessionalReference(index)}
-                className="text-red-600 hover:text-red-700"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label>Full Name *</Label>
-                  <Input
-                    value={reference.fullName}
-                    onChange={(e) =>
-                      updateProfessionalReference(
-                        index,
-                        "fullName",
-                        e.target.value
-                      )
-                    }
-                    placeholder="Reference's full name"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label>Phone Number *</Label>
-                  <Input
-                    value={reference.phone}
-                    onChange={(e) =>
-                      updateProfessionalReference(
-                        index,
-                        "phone",
-                        e.target.value
-                      )
-                    }
-                    placeholder="(555) 123-4567"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label>Email Address</Label>
-                  <Input
-                    type="email"
-                    value={reference.email}
-                    onChange={(e) =>
-                      updateProfessionalReference(
-                        index,
-                        "email",
-                        e.target.value
-                      )
-                    }
-                    placeholder="email@example.com"
-                  />
-                </div>
-                <div>
-                  <Label>Position and Company</Label>
-                  <Input
-                    value={reference.positionAndCompany}
-                    onChange={(e) =>
-                      updateProfessionalReference(
-                        index,
-                        "positionAndCompany",
-                        e.target.value
-                      )
-                    }
-                    placeholder="e.g., Manager at ABC Company"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-        <Button
-          type="button"
-          variant="outline"
-          onClick={addProfessionalReference}
-          className="w-full"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Professional Reference
-        </Button>
+      <p className="text-gray-600 text-sm">
+        Please indicate your qualifications and certifications.
+      </p>
+      
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="hasPSWCertificate"
+            checked={formData.hasPSWCertificate}
+            onCheckedChange={(checked) =>
+              updateFormData("hasPSWCertificate", checked)
+            }
+          />
+          <Label htmlFor="hasPSWCertificate">
+            Do you have a PSW certificate?
+          </Label>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="completedPlacementHours"
+            checked={formData.completedPlacementHours}
+            onCheckedChange={(checked) =>
+              updateFormData("completedPlacementHours", checked)
+            }
+          />
+          <Label htmlFor="completedPlacementHours">
+            If you're a PSW student, have you completed placement hours?
+          </Label>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="hasCPRFirstAid"
+            checked={formData.hasCPRFirstAid}
+            onCheckedChange={(checked) =>
+              updateFormData("hasCPRFirstAid", checked)
+            }
+          />
+          <Label htmlFor="hasCPRFirstAid">
+            Do you have CPR/First Aid (Level C or BLS)?
+          </Label>
+        </div>
+
+        <div className="border-t pt-4">
+          <h4 className="text-lg font-semibold text-blue-800 mb-4">Nursing-related:</h4>
+          
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="isCanadianRN"
+                checked={formData.isCanadianRN}
+                onCheckedChange={(checked) =>
+                  updateFormData("isCanadianRN", checked)
+                }
+              />
+              <Label htmlFor="isCanadianRN">
+                Are you a Canadian-qualified RN/RPN and registered with the CNO?
+              </Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="isRNStudent"
+                checked={formData.isRNStudent}
+                onCheckedChange={(checked) =>
+                  updateFormData("isRNStudent", checked)
+                }
+              />
+              <Label htmlFor="isRNStudent">
+                Are you an RN/RPN student?
+              </Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="isForeignRN"
+                checked={formData.isForeignRN}
+                onCheckedChange={(checked) =>
+                  updateFormData("isForeignRN", checked)
+                }
+              />
+              <Label htmlFor="isForeignRN">
+                Are you a foreign-qualified registered nurse?
+              </Label>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -980,33 +853,74 @@ export default function MultiStepApplicationForm() {
   const renderStep5 = () => (
     <div className="space-y-6">
       <h3 className="text-xl font-semibold text-blue-900 border-b-2 border-blue-200 pb-2">
-        Emergency Contact
+        Criminal & Physical Fitness
       </h3>
+      <p className="text-gray-600 text-sm">
+        Please answer these questions honestly. This information is confidential.
+      </p>
+      
       <div className="space-y-4">
-        <div>
-          <Label htmlFor="emergencyContactName">Full Name *</Label>
-          <Input
-            id="emergencyContactName"
-            value={formData.emergencyContactName}
-            onChange={(e) =>
-              updateFormData("emergencyContactName", e.target.value)
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="criminalConviction5Years"
+            checked={formData.criminalConviction5Years}
+            onCheckedChange={(checked) =>
+              updateFormData("criminalConviction5Years", checked)
             }
-            placeholder="Emergency contact's full name"
-            required
           />
+          <Label htmlFor="criminalConviction5Years">
+            Have you been convicted of a crime in the past 5 years?
+          </Label>
         </div>
-        <div>
-          <Label htmlFor="emergencyContactPhone">Phone Number *</Label>
-          <Input
-            id="emergencyContactPhone"
-            value={formData.emergencyContactPhone}
-            onChange={(e) =>
-              updateFormData("emergencyContactPhone", e.target.value)
+
+        {formData.criminalConviction5Years && (
+          <div>
+            <Label htmlFor="criminalConvictionDetails">
+              Please provide details...
+            </Label>
+            <Textarea
+              id="criminalConvictionDetails"
+              value={formData.criminalConvictionDetails}
+              onChange={(e) =>
+                updateFormData("criminalConvictionDetails", e.target.value)
+              }
+              placeholder="Please provide details about the conviction..."
+              className="mt-1"
+              rows={3}
+            />
+          </div>
+        )}
+
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="physicallyCapable"
+            checked={formData.physicallyCapable}
+            onCheckedChange={(checked) =>
+              updateFormData("physicallyCapable", checked)
             }
-            placeholder="(555) 123-4567"
-            required
           />
+          <Label htmlFor="physicallyCapable">
+            Are you physically capable of performing caregiving duties?
+          </Label>
         </div>
+
+        {!formData.physicallyCapable && (
+          <div>
+            <Label htmlFor="physicalLimitations">
+              Please describe any limitations.
+            </Label>
+            <Textarea
+              id="physicalLimitations"
+              value={formData.physicalLimitations}
+              onChange={(e) =>
+                updateFormData("physicalLimitations", e.target.value)
+              }
+              placeholder="Please describe any physical limitations..."
+              className="mt-1"
+              rows={3}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1014,56 +928,30 @@ export default function MultiStepApplicationForm() {
   const renderStep6 = () => (
     <div className="space-y-6">
       <h3 className="text-xl font-semibold text-blue-900 border-b-2 border-blue-200 pb-2">
-        General & Legal
+        Languages
       </h3>
-      <div className="space-y-6">
+      <p className="text-gray-600 text-sm">
+        Please indicate what languages you speak.
+      </p>
+      
+      <div className="space-y-4">
         <div>
-          <div className="flex items-center space-x-2 mb-4">
-            <Checkbox
-              id="criminalConvictionLast5Years"
-              checked={formData.criminalConvictionLast5Years}
-              onCheckedChange={(checked) =>
-                updateFormData("criminalConvictionLast5Years", checked)
-              }
-            />
-            <Label htmlFor="criminalConvictionLast5Years">
-              Criminal Conviction in Last 5 Years
-            </Label>
-          </div>
-          {formData.criminalConvictionLast5Years && (
-            <Textarea
-              value={formData.criminalConvictionDetails}
-              onChange={(e) =>
-                updateFormData("criminalConvictionDetails", e.target.value)
-              }
-              placeholder="Please provide details..."
-              rows={3}
-            />
-          )}
-        </div>
-        <div>
-          <div className="flex items-center space-x-2 mb-4">
-            <Checkbox
-              id="abilityPerformJobRequirements"
-              checked={formData.abilityPerformJobRequirements}
-              onCheckedChange={(checked) =>
-                updateFormData("abilityPerformJobRequirements", checked)
-              }
-            />
-            <Label htmlFor="abilityPerformJobRequirements">
-              Ability to Perform Job Requirements
-            </Label>
-          </div>
-          {formData.abilityPerformJobRequirements && (
-            <Textarea
-              value={formData.abilityPerformDetails}
-              onChange={(e) =>
-                updateFormData("abilityPerformDetails", e.target.value)
-              }
-              placeholder="Please provide details..."
-              rows={3}
-            />
-          )}
+          <Label htmlFor="languages">What languages do you speak?</Label>
+          <Textarea
+            id="languages"
+            value={formData.languages.join(", ")}
+            onChange={(e) => {
+              const value = e.target.value;
+              const items = value.split(",").map((item) => item.trim());
+              updateFormData("languages", items);
+            }}
+            placeholder="e.g., English, French, Spanish (separate with commas)"
+            className="mt-1"
+            rows={3}
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Separate languages with commas
+          </p>
         </div>
       </div>
     </div>
@@ -1072,80 +960,183 @@ export default function MultiStepApplicationForm() {
   const renderStep7 = () => (
     <div className="space-y-6">
       <h3 className="text-xl font-semibold text-blue-900 border-b-2 border-blue-200 pb-2">
-        Credentials & Skills
+        Work Experience
       </h3>
+      <p className="text-gray-600 text-sm">
+        Please tell us about your caregiving experience.
+      </p>
+      
       <div className="space-y-4">
-        <div>
-          <Label htmlFor="specializedSkills">
-            Specialized Skills/Credentials
-          </Label>
-          <Textarea
-            id="specializedSkills"
-            value={formData.specializedSkills}
-            onChange={(e) =>
-              updateFormData("specializedSkills", e.target.value)
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="hasCaregivingExperience"
+            checked={formData.hasCaregivingExperience}
+            onCheckedChange={(checked) =>
+              updateFormData("hasCaregivingExperience", checked)
             }
-            placeholder="List any specialized skills or credentials..."
-            rows={4}
           />
-        </div>
-        <div>
-          <Label htmlFor="operatedEquipment">Operated Equipment</Label>
-          <Textarea
-            id="operatedEquipment"
-            value={formData.operatedEquipment}
-            onChange={(e) =>
-              updateFormData("operatedEquipment", e.target.value)
-            }
-            placeholder="List any medical equipment you're trained to operate..."
-            rows={4}
-          />
-        </div>
-        <div>
-          <Label htmlFor="hourlyRateExpectation">
-            Expected Hourly Rate ($)
+          <Label htmlFor="hasCaregivingExperience">
+            Have you worked as a caregiver before?
           </Label>
-          <Input
-            id="hourlyRateExpectation"
-            type="number"
-            min="0"
-            step="0.01"
-            value={formData.hourlyRateExpectation}
-            onChange={(e) =>
-              updateFormData(
-                "hourlyRateExpectation",
-                parseFloat(e.target.value) || 0
-              )
-            }
-            placeholder="e.g., 25.00"
-          />
         </div>
-        <div>
-          <Label htmlFor="whyInterested">
-            Why are you interested in this position?
-          </Label>
-          <Textarea
-            id="whyInterested"
-            value={formData.whyInterested}
-            onChange={(e) => updateFormData("whyInterested", e.target.value)}
-            placeholder="Tell us why you're interested in joining our team..."
-            rows={4}
-          />
-        </div>
-        <div>
-          <Label htmlFor="previousExperience">
-            Previous Experience Summary
-          </Label>
-          <Textarea
-            id="previousExperience"
-            value={formData.previousExperience}
-            onChange={(e) =>
-              updateFormData("previousExperience", e.target.value)
-            }
-            placeholder="Brief summary of your relevant experience..."
-            rows={4}
-          />
-        </div>
+
+        {formData.hasCaregivingExperience && (
+          <div className="space-y-6">
+            {formData.workExperience.map((experience, index) => (
+              <Card key={index}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Caregiving Job #{index + 1}
+                  </CardTitle>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeWorkExperience(index)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Employer Name *</Label>
+                      <Input
+                        value={experience.employerName}
+                        onChange={(e) =>
+                          updateWorkExperience(
+                            index,
+                            "employerName",
+                            e.target.value
+                          )
+                        }
+                        placeholder="Employer name"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label>Employer Phone *</Label>
+                      <Input
+                        value={experience.employerPhone}
+                        onChange={(e) =>
+                          updateWorkExperience(
+                            index,
+                            "employerPhone",
+                            e.target.value
+                          )
+                        }
+                        placeholder="(555) 123-4567"
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`isCurrentlyWorking-${index}`}
+                        checked={experience.isCurrentlyWorking}
+                        onCheckedChange={(checked) =>
+                          updateWorkExperience(
+                            index,
+                            "isCurrentlyWorking",
+                            checked
+                          )
+                        }
+                      />
+                      <Label htmlFor={`isCurrentlyWorking-${index}`}>
+                        Are you currently working here?
+                      </Label>
+                    </div>
+                    
+                    {experience.isCurrentlyWorking && (
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`mayContact-${index}`}
+                          checked={experience.mayContact}
+                          onCheckedChange={(checked) =>
+                            updateWorkExperience(
+                              index,
+                              "mayContact",
+                              checked
+                            )
+                          }
+                        />
+                        <Label htmlFor={`mayContact-${index}`}>
+                          May we contact them?
+                        </Label>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Job Title *</Label>
+                      <Select
+                        value={experience.jobTitle}
+                        onValueChange={(value) =>
+                          updateWorkExperience(index, "jobTitle", value)
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select job title" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="PSW">PSW</SelectItem>
+                          <SelectItem value="Caregiver">Caregiver</SelectItem>
+                          <SelectItem value="Nursing Assistant">Nursing Assistant</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Duration *</Label>
+                      <Input
+                        value={experience.duration}
+                        onChange={(e) =>
+                          updateWorkExperience(
+                            index,
+                            "duration",
+                            e.target.value
+                          )
+                        }
+                        placeholder="e.g., Jan 2022 – Apr 2023"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Reason for Leaving</Label>
+                    <Input
+                      value={experience.reasonForLeaving}
+                      onChange={(e) =>
+                        updateWorkExperience(
+                          index,
+                          "reasonForLeaving",
+                          e.target.value
+                        )
+                      }
+                      placeholder="Reason for leaving"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            
+            {formData.workExperience.length < 2 && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addWorkExperience}
+                className="w-full"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Caregiving Job
+              </Button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1153,139 +1144,248 @@ export default function MultiStepApplicationForm() {
   const renderStep8 = () => (
     <div className="space-y-6">
       <h3 className="text-xl font-semibold text-blue-900 border-b-2 border-blue-200 pb-2">
-        Document Uploads
+        Availability
       </h3>
-      <p className="text-gray-600">
-        Please provide your personal information. All fields marked with an
-        asterisk (*) are required.
+      <p className="text-gray-600 text-sm">
+        Please tell us about your availability and preferences.
       </p>
-      <div className="space-y-4">
-        {documentTypes.map((docType) => (
-          <div key={docType.key} className="border rounded-lg p-4">
-            <Label className="font-medium">{docType.label}</Label>
-            <div className="mt-2">
-              <Input
-                type="file"
-                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    handleFileUpload(docType.key, file);
-                  }
-                }}
-                className="hidden"
-                ref={(el) => {
-                  fileInputRefs.current[docType.key] = el;
-                }}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => fileInputRefs.current[docType.key]?.click()}
-                className="w-full"
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Upload {docType.label}
-              </Button>
-            </div>
-            {formData.documents.some((doc) => doc.type === docType.key) && (
-              <div className="mt-2 flex items-center text-sm text-green-600">
-                <FileText className="h-4 w-4 mr-2" />
-                Document uploaded
+      
+      <div className="space-y-6">
+        <div>
+          <Label>What type of work are you looking for?</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+            {["Full-Time", "Part-Time", "Casual / On-Call", "Overnight Shifts", "Live-In Care"].map((type) => (
+              <div key={type} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`workType-${type}`}
+                  checked={formData.workTypes.includes(type)}
+                  onCheckedChange={(checked) => {
+                    const updated = checked
+                      ? [...formData.workTypes, type]
+                      : formData.workTypes.filter((t) => t !== type);
+                    updateFormData("workTypes", updated);
+                  }}
+                />
+                <Label htmlFor={`workType-${type}`}>{type}</Label>
               </div>
-            )}
+            ))}
           </div>
-        ))}
-      </div>
-    </div>
-  );
+        </div>
 
-  const renderStep9 = () => (
-    <div className="space-y-6">
-      <h3 className="text-xl font-semibold text-blue-900 border-b-2 border-blue-200 pb-2">
-        Final Declaration
-      </h3>
-      <div className="space-y-4">
-        <div className="flex items-start space-x-2">
-          <Checkbox
-            id="certificationTruthfulness"
-            checked={formData.certificationTruthfulness}
-            onCheckedChange={(checked) =>
-              updateFormData("certificationTruthfulness", checked)
-            }
-            required
-          />
-          <Label htmlFor="certificationTruthfulness" className="text-sm">
-            I certify that all information provided in this application is true
-            and complete to the best of my knowledge.
-          </Label>
+        <div>
+          <Label>What days are you available to work?</Label>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+            {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
+              <div key={day} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`availableDay-${day}`}
+                  checked={formData.availableDays.includes(day)}
+                  onCheckedChange={(checked) => {
+                    const updated = checked
+                      ? [...formData.availableDays, day]
+                      : formData.availableDays.filter((d) => d !== day);
+                    updateFormData("availableDays", updated);
+                  }}
+                />
+                <Label htmlFor={`availableDay-${day}`}>{day}</Label>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="flex items-start space-x-2">
-          <Checkbox
-            id="authorizationBackgroundCheck"
-            checked={formData.authorizationBackgroundCheck}
-            onCheckedChange={(checked) =>
-              updateFormData("authorizationBackgroundCheck", checked)
-            }
-            required
-          />
-          <Label htmlFor="authorizationBackgroundCheck" className="text-sm">
-            I authorize the company to conduct a background check as part of the
-            application process.
-          </Label>
+
+        <div>
+          <Label>Are you available to work:</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+            {[
+              { key: "availableMornings", label: "Mornings?" },
+              { key: "availableAfternoons", label: "Afternoons?" },
+              { key: "availableEvenings", label: "Evenings?" },
+              { key: "availableOvernight", label: "Overnight?" },
+              { key: "availableWeekends", label: "Weekends?" },
+              { key: "availableHolidays", label: "Holidays?" },
+            ].map(({ key, label }) => (
+              <div key={key} className="flex items-center space-x-2">
+                <Checkbox
+                  id={key}
+                  checked={formData[key as keyof ApplicationFormData] as boolean}
+                  onCheckedChange={(checked) =>
+                    updateFormData(key as keyof ApplicationFormData, checked)
+                  }
+                />
+                <Label htmlFor={key}>{label}</Label>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="flex items-start space-x-2">
-          <Checkbox
-            id="understandingAtWillEmployment"
-            checked={formData.understandingAtWillEmployment}
-            onCheckedChange={(checked) =>
-              updateFormData("understandingAtWillEmployment", checked)
-            }
-            required
-          />
-          <Label htmlFor="understandingAtWillEmployment" className="text-sm">
-            I understand that employment is at-will and can be terminated at any
-            time by either party.
-          </Label>
-        </div>
-        <div className="flex items-start space-x-2">
-          <Checkbox
-            id="acknowledgmentApplicationValidity"
-            checked={formData.acknowledgmentApplicationValidity}
-            onCheckedChange={(checked) =>
-              updateFormData("acknowledgmentApplicationValidity", checked)
-            }
-            required
-          />
-          <Label
-            htmlFor="acknowledgmentApplicationValidity"
-            className="text-sm"
+
+        <div>
+          <Label>Preferred shift length?</Label>
+          <Select
+            value={formData.preferredShiftLength}
+            onValueChange={(value) => updateFormData("preferredShiftLength", value)}
           >
-            I acknowledge that this application will remain valid for 90 days
-            from the date of submission.
-          </Label>
+            <SelectTrigger className="mt-1">
+              <SelectValue placeholder="Select shift length" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="2-4 hours">2–4 hours</SelectItem>
+              <SelectItem value="4-6 hours">4–6 hours</SelectItem>
+              <SelectItem value="6-8 hours">6–8 hours</SelectItem>
+              <SelectItem value="8-12 hours">8–12 hours</SelectItem>
+              <SelectItem value="No preference">No preference</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+
         <div>
-          <Label htmlFor="digitalSignature">Digital Signature *</Label>
-          <Input
-            id="digitalSignature"
-            value={formData.digitalSignature}
-            onChange={(e) => updateFormData("digitalSignature", e.target.value)}
-            placeholder="Type your full name as signature"
-            required
-          />
+          <Label>When can you start?</Label>
+          <Select
+            value={formData.startDate}
+            onValueChange={(value) => updateFormData("startDate", value)}
+          >
+            <SelectTrigger className="mt-1">
+              <SelectValue placeholder="Select start date" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Immediately">Immediately</SelectItem>
+              <SelectItem value="In 1 week">In 1 week</SelectItem>
+              <SelectItem value="In 2 weeks">In 2 weeks</SelectItem>
+              <SelectItem value="Other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          {formData.startDate === "Other" && (
+            <Input
+              value={formData.startDateOther}
+              onChange={(e) => updateFormData("startDateOther", e.target.value)}
+              placeholder="Please specify when you can start"
+              className="mt-2"
+            />
+          )}
         </div>
+
         <div>
-          <Label htmlFor="signatureDate">Date *</Label>
-          <Input
-            id="signatureDate"
-            type="date"
-            min="1900-01-01"
-            max={new Date().toISOString().split("T")[0]}
-            value={formData.signatureDate}
-            onChange={(e) => updateFormData("signatureDate", e.target.value)}
-            required
+          <Label>Total hours per week you're available?</Label>
+          <Select
+            value={formData.hoursPerWeek}
+            onValueChange={(value) => updateFormData("hoursPerWeek", value)}
+          >
+            <SelectTrigger className="mt-1">
+              <SelectValue placeholder="Select hours per week" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Less than 10">Less than 10</SelectItem>
+              <SelectItem value="10-20">10–20</SelectItem>
+              <SelectItem value="20-30">20–30</SelectItem>
+              <SelectItem value="30+">30+</SelectItem>
+              <SelectItem value="No preference">No preference</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label>Preferred Work Locations</Label>
+          <Textarea
+            value={formData.preferredLocations.join(", ")}
+            onChange={(e) => {
+              const value = e.target.value;
+              const items = value.split(",").map((item) => item.trim());
+              updateFormData("preferredLocations", items);
+            }}
+            placeholder="e.g., Toronto, Etobicoke, North York (separate with commas)"
+            className="mt-1"
+            rows={2}
           />
+          <p className="text-xs text-gray-500 mt-1">
+            Separate locations with commas
+          </p>
+        </div>
+
+        <Separator className="my-6" />
+        
+        <div className="space-y-4">
+          <h4 className="text-lg font-semibold text-blue-900">Final Declarations</h4>
+          <p className="text-gray-600 text-sm">
+            Please read and acknowledge the following statements.
+          </p>
+          
+          <div className="space-y-4">
+            <div className="flex items-start space-x-2">
+              <Checkbox
+                id="certificationTruthfulness"
+                checked={formData.certificationTruthfulness}
+                onCheckedChange={(checked) =>
+                  updateFormData("certificationTruthfulness", checked)
+                }
+              />
+              <Label htmlFor="certificationTruthfulness" className="text-sm">
+                I certify that all information provided in this application is true and complete to the best of my knowledge.
+              </Label>
+            </div>
+
+            <div className="flex items-start space-x-2">
+              <Checkbox
+                id="authorizationBackgroundCheck"
+                checked={formData.authorizationBackgroundCheck}
+                onCheckedChange={(checked) =>
+                  updateFormData("authorizationBackgroundCheck", checked)
+                }
+              />
+              <Label htmlFor="authorizationBackgroundCheck" className="text-sm">
+                I authorize Haven at Home to conduct a background check and verify my qualifications.
+              </Label>
+            </div>
+
+            <div className="flex items-start space-x-2">
+              <Checkbox
+                id="understandingAtWillEmployment"
+                checked={formData.understandingAtWillEmployment}
+                onCheckedChange={(checked) =>
+                  updateFormData("understandingAtWillEmployment", checked)
+                }
+              />
+              <Label htmlFor="understandingAtWillEmployment" className="text-sm">
+                I understand that employment is at-will and can be terminated at any time by either party.
+              </Label>
+            </div>
+
+            <div className="flex items-start space-x-2">
+              <Checkbox
+                id="acknowledgmentApplicationValidity"
+                checked={formData.acknowledgmentApplicationValidity}
+                onCheckedChange={(checked) =>
+                  updateFormData("acknowledgmentApplicationValidity", checked)
+                }
+              />
+              <Label htmlFor="acknowledgmentApplicationValidity" className="text-sm">
+                I acknowledge that this application is valid for 90 days from the date of submission.
+              </Label>
+            </div>
+
+            <div>
+              <Label htmlFor="digitalSignature">Digital Signature *</Label>
+              <Input
+                id="digitalSignature"
+                value={formData.digitalSignature}
+                onChange={(e) => updateFormData("digitalSignature", e.target.value)}
+                placeholder="Type your full name to sign"
+                required
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="signatureDate">Date *</Label>
+              <Input
+                id="signatureDate"
+                type="date"
+                value={formData.signatureDate}
+                onChange={(e) => updateFormData("signatureDate", e.target.value)}
+                required
+                className="mt-1"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1309,10 +1409,8 @@ export default function MultiStepApplicationForm() {
         return renderStep7();
       case 8:
         return renderStep8();
-      case 9:
-        return renderStep9();
       default:
-        return null;
+        return renderStep1();
     }
   };
 
@@ -1359,33 +1457,22 @@ export default function MultiStepApplicationForm() {
                   type="button"
                   onClick={nextStep}
                   disabled={!validateStep(currentStep)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white order-1 sm:order-2"
+                  className="flex-1 sm:flex-none order-2 sm:order-1"
                 >
-                  {currentStep === 1
-                    ? "Education & Experience"
-                    : currentStep === 2
-                    ? "Employment History"
-                    : currentStep === 3
-                    ? "Professional References"
-                    : currentStep === 4
-                    ? "Emergency Contact"
-                    : currentStep === 5
-                    ? "Legal Information"
-                    : currentStep === 6
-                    ? "Credentials & Skills"
-                    : currentStep === 7
-                    ? "Document Uploads"
-                    : currentStep === 8
-                    ? "Final Declaration"
-                    : "Submit Application"}
-                  <ChevronRight className="h-4 w-4 ml-2" />
+                  {currentStep === 1 && "Upload Documents"}
+                  {currentStep === 2 && "Quick Eligibility Check"}
+                  {currentStep === 3 && "Qualifications"}
+                  {currentStep === 4 && "Criminal & Physical Fitness"}
+                  {currentStep === 5 && "Languages"}
+                  {currentStep === 6 && "Work Experience"}
+                  {currentStep === 7 && "Availability"}
+                  <ChevronRight className="ml-2 h-4 w-4" />
                 </Button>
               ) : (
                 <Button
-                  type="button"
-                  onClick={submitApplication}
-                  disabled={isSubmitting || !validateStep(currentStep)}
-                  className="bg-green-600 hover:bg-green-700 text-white order-1 sm:order-2"
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 sm:flex-none order-2 sm:order-1"
                 >
                   {isSubmitting ? "Submitting..." : "Submit Application"}
                 </Button>
