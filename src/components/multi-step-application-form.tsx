@@ -8,12 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import {
-  Plus,
-  X,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { Plus, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -176,8 +171,6 @@ const initialFormData: ApplicationFormData = {
   signatureDate: "",
 };
 
-
-
 export default function MultiStepApplicationForm() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] =
@@ -334,6 +327,12 @@ export default function MultiStepApplicationForm() {
         email: formData.email,
         phone: formData.phone,
 
+        // Step 2: Upload Documents (URLs)
+        resume_url: uploadedFiles.resume_url || null,
+        cpr_certificate_url: uploadedFiles.cpr_certificate_url || null,
+        psw_certificate_url: uploadedFiles.psw_certificate_url || null,
+        additional_certifications_url: uploadedFiles.additional_certifications_url || null,
+
         // Step 3: Quick Eligibility Check
         legally_eligible_canada: formData.legallyEligibleCanada,
         age_18_or_older: formData.age18OrOlder,
@@ -402,6 +401,95 @@ export default function MultiStepApplicationForm() {
 
       if (!supabase) {
         toast.error("Database connection failed. Please try again.");
+        return;
+      }
+
+      // Upload files to Supabase storage
+      const uploadedFiles: { [key: string]: string } = {};
+      
+      try {
+        // Upload resume
+        if (formData.resume) {
+          const resumeFileName = `${applicationId}_resume_${Date.now()}.${formData.resume.name.split('.').pop()}`;
+          const { data: resumeData, error: resumeError } = await supabase.storage
+            .from('caregiver-documents')
+            .upload(resumeFileName, formData.resume);
+          
+          if (resumeError) {
+            console.error('Resume upload error:', resumeError);
+            toast.error('Failed to upload resume. Please try again.');
+            return;
+          }
+          
+          const { data: resumeUrl } = supabase.storage
+            .from('caregiver-documents')
+            .getPublicUrl(resumeFileName);
+          
+          uploadedFiles.resume_url = resumeUrl.publicUrl;
+        }
+
+        // Upload CPR certificate
+        if (formData.cprCertificate) {
+          const cprFileName = `${applicationId}_cpr_${Date.now()}.${formData.cprCertificate.name.split('.').pop()}`;
+          const { data: cprData, error: cprError } = await supabase.storage
+            .from('caregiver-documents')
+            .upload(cprFileName, formData.cprCertificate);
+          
+          if (cprError) {
+            console.error('CPR certificate upload error:', cprError);
+            toast.error('Failed to upload CPR certificate. Please try again.');
+            return;
+          }
+          
+          const { data: cprUrl } = supabase.storage
+            .from('caregiver-documents')
+            .getPublicUrl(cprFileName);
+          
+          uploadedFiles.cpr_certificate_url = cprUrl.publicUrl;
+        }
+
+        // Upload PSW certificate
+        if (formData.pswCertificate) {
+          const pswFileName = `${applicationId}_psw_${Date.now()}.${formData.pswCertificate.name.split('.').pop()}`;
+          const { data: pswData, error: pswError } = await supabase.storage
+            .from('caregiver-documents')
+            .upload(pswFileName, formData.pswCertificate);
+          
+          if (pswError) {
+            console.error('PSW certificate upload error:', pswError);
+            toast.error('Failed to upload PSW certificate. Please try again.');
+            return;
+          }
+          
+          const { data: pswUrl } = supabase.storage
+            .from('caregiver-documents')
+            .getPublicUrl(pswFileName);
+          
+          uploadedFiles.psw_certificate_url = pswUrl.publicUrl;
+        }
+
+        // Upload additional certifications
+        if (formData.additionalCertifications) {
+          const certFileName = `${applicationId}_additional_cert_${Date.now()}.${formData.additionalCertifications.name.split('.').pop()}`;
+          const { data: certData, error: certError } = await supabase.storage
+            .from('caregiver-documents')
+            .upload(certFileName, formData.additionalCertifications);
+          
+          if (certError) {
+            console.error('Additional certification upload error:', certError);
+            toast.error('Failed to upload additional certification. Please try again.');
+            return;
+          }
+          
+          const { data: certUrl } = supabase.storage
+            .from('caregiver-documents')
+            .getPublicUrl(certFileName);
+          
+          uploadedFiles.additional_certifications_url = certUrl.publicUrl;
+        }
+      } catch (uploadError) {
+        console.error('File upload error:', uploadError);
+        toast.error('Failed to upload documents. Please try again.');
         return;
       }
 
@@ -1225,9 +1313,9 @@ export default function MultiStepApplicationForm() {
                         updateWorkExperience(index, "jobTitle", value)
                       }
                     >
-                      <SelectTrigger className="bg-white border-gray-300">
-                        <SelectValue placeholder="Select job title" />
-                      </SelectTrigger>
+                                             <SelectTrigger className="!bg-white !border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                         <SelectValue placeholder="Select job title" />
+                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="PSW">PSW</SelectItem>
                         <SelectItem value="Caregiver">Caregiver</SelectItem>
@@ -1338,7 +1426,7 @@ export default function MultiStepApplicationForm() {
                             updateWorkExperience(index, "startMonth", value)
                           }
                         >
-                          <SelectTrigger className="bg-white border-gray-300">
+                          <SelectTrigger className="!bg-white !border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <SelectValue placeholder="Month" />
                           </SelectTrigger>
                           <SelectContent>
@@ -1371,7 +1459,7 @@ export default function MultiStepApplicationForm() {
                             updateWorkExperience(index, "startYear", value)
                           }
                         >
-                          <SelectTrigger className="bg-white border-gray-300">
+                          <SelectTrigger className="!bg-white !border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <SelectValue placeholder="Year" />
                           </SelectTrigger>
                           <SelectContent>
@@ -1397,7 +1485,7 @@ export default function MultiStepApplicationForm() {
                               updateWorkExperience(index, "endMonth", value)
                             }
                           >
-                            <SelectTrigger className="bg-white border-gray-300">
+                            <SelectTrigger className="!bg-white !border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                               <SelectValue placeholder="Month" />
                             </SelectTrigger>
                             <SelectContent>
@@ -1430,7 +1518,7 @@ export default function MultiStepApplicationForm() {
                               updateWorkExperience(index, "endYear", value)
                             }
                           >
-                            <SelectTrigger className="bg-white border-gray-300">
+                            <SelectTrigger className="!bg-white !border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                               <SelectValue placeholder="Year" />
                             </SelectTrigger>
                             <SelectContent>
@@ -1585,7 +1673,7 @@ export default function MultiStepApplicationForm() {
               updateFormData("preferredShiftLength", value)
             }
           >
-            <SelectTrigger className="mt-1">
+            <SelectTrigger className="mt-1 !bg-white !border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
               <SelectValue placeholder="Select shift length" />
             </SelectTrigger>
             <SelectContent>
@@ -1604,7 +1692,7 @@ export default function MultiStepApplicationForm() {
             value={formData.startDate}
             onValueChange={(value) => updateFormData("startDate", value)}
           >
-            <SelectTrigger className="mt-1">
+            <SelectTrigger className="mt-1 !bg-white !border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
               <SelectValue placeholder="Select start date" />
             </SelectTrigger>
             <SelectContent>
@@ -1626,12 +1714,12 @@ export default function MultiStepApplicationForm() {
         </div>
 
         <div>
-                      <Label>Total hours per week you&apos;re available?</Label>
+          <Label>Total hours per week you&apos;re available?</Label>
           <Select
             value={formData.hoursPerWeek}
             onValueChange={(value) => updateFormData("hoursPerWeek", value)}
           >
-            <SelectTrigger className="mt-1">
+            <SelectTrigger className="mt-1 !bg-white !border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
               <SelectValue placeholder="Select hours per week" />
             </SelectTrigger>
             <SelectContent>

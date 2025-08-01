@@ -24,6 +24,10 @@
   --color-haven-error: var(--haven-error);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --color-input: #e5e7eb;
+  --color-ring: #3b82f6;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #171717;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -57,4 +61,15 @@ body {
 
 .brand-secondary:hover {
   background-color: #e2e8f0;
+}
+
+/* Fix for select dropdown backgrounds */
+[data-radix-select-trigger] {
+  background-color: white !important;
+  border-color: #d1d5db !important;
+}
+
+[data-radix-select-trigger]:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1) !important;
 }
