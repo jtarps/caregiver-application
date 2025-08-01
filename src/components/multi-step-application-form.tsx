@@ -19,8 +19,15 @@ import {
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 // Types for form data
 interface WorkExperience {
@@ -29,7 +36,11 @@ interface WorkExperience {
   isCurrentlyWorking: boolean;
   mayContact: boolean;
   jobTitle: string;
-  duration: string;
+  jobTitleOther: string;
+  startMonth: string;
+  startYear: string;
+  endMonth: string;
+  endYear: string;
   reasonForLeaving: string;
 }
 
@@ -90,7 +101,6 @@ interface ApplicationFormData {
   startDate: string;
   startDateOther: string;
   hoursPerWeek: string;
-  preferredLocations: string[];
 
   // Final Declarations
   certificationTruthfulness: boolean;
@@ -158,7 +168,6 @@ const initialFormData: ApplicationFormData = {
   startDate: "",
   startDateOther: "",
   hoursPerWeek: "",
-  preferredLocations: [],
 
   // Final Declarations
   certificationTruthfulness: false,
@@ -211,9 +220,6 @@ export default function MultiStepApplicationForm() {
   const progress = Math.min((currentStep / totalSteps) * 100, 100); // Ensure it doesn't exceed 100%
 
   // Debug logging
-  console.log(
-    `Current step: ${currentStep}, Total steps: ${totalSteps}, Progress: ${progress}%`
-  );
 
   const updateFormData = (field: keyof ApplicationFormData, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -230,7 +236,11 @@ export default function MultiStepApplicationForm() {
           isCurrentlyWorking: false,
           mayContact: false,
           jobTitle: "",
-          duration: "",
+          jobTitleOther: "",
+          startMonth: "",
+          startYear: "",
+          endMonth: "",
+          endYear: "",
           reasonForLeaving: "",
         },
       ],
@@ -308,6 +318,10 @@ export default function MultiStepApplicationForm() {
   };
 
   const submitApplication = async () => {
+    console.log("Submit button clicked!");
+    console.log("Current step:", currentStep);
+    console.log("Form data:", formData);
+
     if (!validateStep(currentStep)) {
       toast.error("Please fill in all required fields");
       return;
@@ -336,7 +350,7 @@ export default function MultiStepApplicationForm() {
         last_name: formData.lastName,
         email: formData.email,
         phone: formData.phone,
-        
+
         // Step 3: Quick Eligibility Check
         legally_eligible_canada: formData.legallyEligibleCanada,
         age_18_or_older: formData.age18OrOlder,
@@ -375,19 +389,20 @@ export default function MultiStepApplicationForm() {
         available_afternoons: formData.availableAfternoons,
         available_evenings: formData.availableEvenings,
         available_overnight: formData.availableOvernight,
-        available_weekends: formData.availableWeekends,
+        available_weekends_availability: formData.availableWeekends,
         available_holidays: formData.availableHolidays,
         preferred_shift_length: formData.preferredShiftLength,
         start_date: formData.startDate,
         start_date_other: formData.startDateOther,
         hours_per_week: formData.hoursPerWeek,
-        preferred_locations: formData.preferredLocations,
 
         // Final Declarations
         certification_truthfulness: formData.certificationTruthfulness,
         authorization_background_check: formData.authorizationBackgroundCheck,
-        understanding_at_will_employment: formData.understandingAtWillEmployment,
-        acknowledgment_application_validity: formData.acknowledgmentApplicationValidity,
+        understanding_at_will_employment:
+          formData.understandingAtWillEmployment,
+        acknowledgment_application_validity:
+          formData.acknowledgmentApplicationValidity,
         digital_signature: formData.digitalSignature,
         signature_date: formData.signatureDate,
         status: "pending",
@@ -415,7 +430,15 @@ export default function MultiStepApplicationForm() {
         console.error("Database error details:", error);
 
         // Handle specific error cases
-        if (error.code === "23505" || error.code === "409") {
+        if (error.code === "42P01") {
+          // Table doesn't exist
+          toast.error(
+            "Database table not found. Please run the SQL setup script in your Supabase dashboard first."
+          );
+          console.error(
+            "Table 'caregiver_applications' does not exist. Please run the SQL setup script."
+          );
+        } else if (error.code === "23505" || error.code === "409") {
           if (
             error.message?.includes("email") ||
             error.details?.includes("email")
@@ -457,35 +480,22 @@ export default function MultiStepApplicationForm() {
           toast.error(`Submission failed: ${error.message || "Unknown error"}`);
         }
 
+        setIsSubmitting(false);
         return; // Don't throw error, just return to prevent further execution
       }
 
-      // For development/testing, show success even if database fails
-      if (process.env.NODE_ENV === "development" && error) {
-        console.log("Development mode: Showing success despite database error");
-        toast.success(
-          "Application submitted successfully! (Development mode - database error ignored)"
-        );
-        setFormData(initialFormData);
-        setCurrentStep(1);
-        setRawCertifications("");
-        setRawSpecializations("");
-        setRawLanguages("");
-        return;
-      }
-
+      // Success case
       toast.success(
         "Application submitted successfully! We'll be in touch soon."
       );
+
+      // Reset form and redirect to PSW assessment
       setFormData(initialFormData);
       setCurrentStep(1);
-      setRawCertifications("");
-      setRawSpecializations("");
-      setRawLanguages("");
       router.push(`/psw-assessment?applicationId=${applicationId}`);
     } catch (error: unknown) {
-      console.error("Error submitting application:", error);
-      toast.error("Failed to submit application. Please try again.");
+      console.error("Unexpected error during submission:", error);
+      toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -556,9 +566,10 @@ export default function MultiStepApplicationForm() {
         Upload Documents
       </h3>
       <p className="text-gray-600 text-sm">
-        Please upload your documents. Resume is required, other documents are optional.
+        Please upload your documents. Resume is required, other documents are
+        optional.
       </p>
-      
+
       <div className="space-y-4">
         <div>
           <Label htmlFor="resume">Upload Resume *</Label>
@@ -573,13 +584,20 @@ export default function MultiStepApplicationForm() {
             className="mt-1"
             required
           />
+          {formData.resume && (
+            <p className="text-xs text-green-600 mt-1">
+              ✓ {formData.resume.name} selected
+            </p>
+          )}
           <p className="text-xs text-gray-500 mt-1">
             Accepted formats: PDF, DOC, DOCX
           </p>
         </div>
 
         <div>
-          <Label htmlFor="cprCertificate">Upload CPR/First Aid Certificate (Optional)</Label>
+          <Label htmlFor="cprCertificate">
+            Upload CPR/First Aid Certificate (Optional)
+          </Label>
           <Input
             id="cprCertificate"
             type="file"
@@ -590,10 +608,17 @@ export default function MultiStepApplicationForm() {
             }}
             className="mt-1"
           />
+          {formData.cprCertificate && (
+            <p className="text-xs text-green-600 mt-1">
+              ✓ {formData.cprCertificate.name} selected
+            </p>
+          )}
         </div>
 
         <div>
-          <Label htmlFor="pswCertificate">Upload PSW or other Caregiving Certificate (Optional)</Label>
+          <Label htmlFor="pswCertificate">
+            Upload PSW or other Caregiving Certificate (Optional)
+          </Label>
           <Input
             id="pswCertificate"
             type="file"
@@ -604,10 +629,17 @@ export default function MultiStepApplicationForm() {
             }}
             className="mt-1"
           />
+          {formData.pswCertificate && (
+            <p className="text-xs text-green-600 mt-1">
+              ✓ {formData.pswCertificate.name} selected
+            </p>
+          )}
         </div>
 
         <div>
-          <Label htmlFor="additionalCertifications">Upload Additional Certifications (Optional)</Label>
+          <Label htmlFor="additionalCertifications">
+            Upload Additional Certifications (Optional)
+          </Label>
           <Input
             id="additionalCertifications"
             type="file"
@@ -618,6 +650,11 @@ export default function MultiStepApplicationForm() {
             }}
             className="mt-1"
           />
+          {formData.additionalCertifications && (
+            <p className="text-xs text-green-600 mt-1">
+              ✓ {formData.additionalCertifications.name} selected
+            </p>
+          )}
         </div>
       </div>
     </div>
@@ -631,123 +668,205 @@ export default function MultiStepApplicationForm() {
       <p className="text-gray-600 text-sm">
         Please answer these questions to help us determine your eligibility.
       </p>
-      
-      <div className="space-y-4">
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="legallyEligibleCanada"
-            checked={formData.legallyEligibleCanada}
-            onCheckedChange={(checked) =>
-              updateFormData("legallyEligibleCanada", checked)
-            }
-          />
-          <Label htmlFor="legallyEligibleCanada">
+
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+          <Label className="text-base font-semibold text-gray-900">
             Are you legally eligible to work in Canada?
           </Label>
+          <RadioGroup
+            value={formData.legallyEligibleCanada ? "yes" : "no"}
+            onValueChange={(value) =>
+              updateFormData("legallyEligibleCanada", value === "yes")
+            }
+            className="flex space-x-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="yes" id="legallyEligibleCanada-yes" />
+              <Label htmlFor="legallyEligibleCanada-yes">Yes</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="no" id="legallyEligibleCanada-no" />
+              <Label htmlFor="legallyEligibleCanada-no">No</Label>
+            </div>
+          </RadioGroup>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="age18OrOlder"
-            checked={formData.age18OrOlder}
-            onCheckedChange={(checked) =>
-              updateFormData("age18OrOlder", checked)
-            }
-          />
-          <Label htmlFor="age18OrOlder">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+          <Label className="text-base font-semibold text-gray-900">
             Are you 18 years of age or older?
           </Label>
+          <RadioGroup
+            value={formData.age18OrOlder ? "yes" : "no"}
+            onValueChange={(value) =>
+              updateFormData("age18OrOlder", value === "yes")
+            }
+            className="flex space-x-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="yes" id="age18OrOlder-yes" />
+              <Label htmlFor="age18OrOlder-yes">Yes</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="no" id="age18OrOlder-no" />
+              <Label htmlFor="age18OrOlder-no">No</Label>
+            </div>
+          </RadioGroup>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="hasDriverLicense"
-            checked={formData.hasDriverLicense}
-            onCheckedChange={(checked) =>
-              updateFormData("hasDriverLicense", checked)
-            }
-          />
-          <Label htmlFor="hasDriverLicense">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+          <Label className="text-base font-semibold text-gray-900">
             Do you have a valid driver's license?
           </Label>
+          <RadioGroup
+            value={formData.hasDriverLicense ? "yes" : "no"}
+            onValueChange={(value) =>
+              updateFormData("hasDriverLicense", value === "yes")
+            }
+            className="flex space-x-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="yes" id="hasDriverLicense-yes" />
+              <Label htmlFor="hasDriverLicense-yes">Yes</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="no" id="hasDriverLicense-no" />
+              <Label htmlFor="hasDriverLicense-no">No</Label>
+            </div>
+          </RadioGroup>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="hasReliableCar"
-            checked={formData.hasReliableCar}
-            onCheckedChange={(checked) =>
-              updateFormData("hasReliableCar", checked)
-            }
-          />
-          <Label htmlFor="hasReliableCar">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+          <Label className="text-base font-semibold text-gray-900">
             Do you have access to a reliable car for work?
           </Label>
+          <RadioGroup
+            value={formData.hasReliableCar ? "yes" : "no"}
+            onValueChange={(value) =>
+              updateFormData("hasReliableCar", value === "yes")
+            }
+            className="flex space-x-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="yes" id="hasReliableCar-yes" />
+              <Label htmlFor="hasReliableCar-yes">Yes</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="no" id="hasReliableCar-no" />
+              <Label htmlFor="hasReliableCar-no">No</Label>
+            </div>
+          </RadioGroup>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="availableWeekends"
-            checked={formData.availableWeekends}
-            onCheckedChange={(checked) =>
-              updateFormData("availableWeekends", checked)
-            }
-          />
-          <Label htmlFor="availableWeekends">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+          <Label className="text-base font-semibold text-gray-900">
             Are you available to work weekends?
           </Label>
+          <RadioGroup
+            value={formData.availableWeekends ? "yes" : "no"}
+            onValueChange={(value) =>
+              updateFormData("availableWeekends", value === "yes")
+            }
+            className="flex space-x-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="yes" id="availableWeekends-yes" />
+              <Label htmlFor="availableWeekends-yes">Yes</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="no" id="availableWeekends-no" />
+              <Label htmlFor="availableWeekends-no">No</Label>
+            </div>
+          </RadioGroup>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="canLiveInCare"
-            checked={formData.canLiveInCare}
-            onCheckedChange={(checked) =>
-              updateFormData("canLiveInCare", checked)
-            }
-          />
-          <Label htmlFor="canLiveInCare">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+          <Label className="text-base font-semibold text-gray-900">
             Are you able to work as a live-in caregiver?
           </Label>
+          <RadioGroup
+            value={formData.canLiveInCare ? "yes" : "no"}
+            onValueChange={(value) =>
+              updateFormData("canLiveInCare", value === "yes")
+            }
+            className="flex space-x-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="yes" id="canLiveInCare-yes" />
+              <Label htmlFor="canLiveInCare-yes">Yes</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="no" id="canLiveInCare-no" />
+              <Label htmlFor="canLiveInCare-no">No</Label>
+            </div>
+          </RadioGroup>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="isInternationalStudent"
-            checked={formData.isInternationalStudent}
-            onCheckedChange={(checked) =>
-              updateFormData("isInternationalStudent", checked)
-            }
-          />
-          <Label htmlFor="isInternationalStudent">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+          <Label className="text-base font-semibold text-gray-900">
             Are you currently enrolled as an international student?
           </Label>
+          <RadioGroup
+            value={formData.isInternationalStudent ? "yes" : "no"}
+            onValueChange={(value) =>
+              updateFormData("isInternationalStudent", value === "yes")
+            }
+            className="flex space-x-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="yes" id="isInternationalStudent-yes" />
+              <Label htmlFor="isInternationalStudent-yes">Yes</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="no" id="isInternationalStudent-no" />
+              <Label htmlFor="isInternationalStudent-no">No</Label>
+            </div>
+          </RadioGroup>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="previouslyApplied"
-            checked={formData.previouslyApplied}
-            onCheckedChange={(checked) =>
-              updateFormData("previouslyApplied", checked)
-            }
-          />
-          <Label htmlFor="previouslyApplied">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+          <Label className="text-base font-semibold text-gray-900">
             Have you applied with us before?
           </Label>
+          <RadioGroup
+            value={formData.previouslyApplied ? "yes" : "no"}
+            onValueChange={(value) =>
+              updateFormData("previouslyApplied", value === "yes")
+            }
+            className="flex space-x-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="yes" id="previouslyApplied-yes" />
+              <Label htmlFor="previouslyApplied-yes">Yes</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="no" id="previouslyApplied-no" />
+              <Label htmlFor="previouslyApplied-no">No</Label>
+            </div>
+          </RadioGroup>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="canPerformDuties"
-            checked={formData.canPerformDuties}
-            onCheckedChange={(checked) =>
-              updateFormData("canPerformDuties", checked)
-            }
-          />
-          <Label htmlFor="canPerformDuties">
-            Are you able to perform the essential duties of this role without accommodations?
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+          <Label className="text-base font-semibold text-gray-900">
+            Are you able to perform the essential duties of this role without
+            accommodations?
           </Label>
+          <RadioGroup
+            value={formData.canPerformDuties ? "yes" : "no"}
+            onValueChange={(value) =>
+              updateFormData("canPerformDuties", value === "yes")
+            }
+            className="flex space-x-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="yes" id="canPerformDuties-yes" />
+              <Label htmlFor="canPerformDuties-yes">Yes</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="no" id="canPerformDuties-no" />
+              <Label htmlFor="canPerformDuties-no">No</Label>
+            </div>
+          </RadioGroup>
         </div>
       </div>
     </div>
@@ -761,88 +880,144 @@ export default function MultiStepApplicationForm() {
       <p className="text-gray-600 text-sm">
         Please indicate your qualifications and certifications.
       </p>
-      
-      <div className="space-y-4">
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="hasPSWCertificate"
-            checked={formData.hasPSWCertificate}
-            onCheckedChange={(checked) =>
-              updateFormData("hasPSWCertificate", checked)
-            }
-          />
-          <Label htmlFor="hasPSWCertificate">
+
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+          <Label className="text-base font-semibold text-gray-900">
             Do you have a PSW certificate?
           </Label>
+          <RadioGroup
+            value={formData.hasPSWCertificate ? "yes" : "no"}
+            onValueChange={(value) =>
+              updateFormData("hasPSWCertificate", value === "yes")
+            }
+            className="flex space-x-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="yes" id="hasPSWCertificate-yes" />
+              <Label htmlFor="hasPSWCertificate-yes">Yes</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="no" id="hasPSWCertificate-no" />
+              <Label htmlFor="hasPSWCertificate-no">No</Label>
+            </div>
+          </RadioGroup>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="completedPlacementHours"
-            checked={formData.completedPlacementHours}
-            onCheckedChange={(checked) =>
-              updateFormData("completedPlacementHours", checked)
-            }
-          />
-          <Label htmlFor="completedPlacementHours">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+          <Label className="text-base font-semibold text-gray-900">
             If you're a PSW student, have you completed placement hours?
           </Label>
+          <RadioGroup
+            value={formData.completedPlacementHours ? "yes" : "no"}
+            onValueChange={(value) =>
+              updateFormData("completedPlacementHours", value === "yes")
+            }
+            className="flex space-x-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="yes" id="completedPlacementHours-yes" />
+              <Label htmlFor="completedPlacementHours-yes">Yes</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="no" id="completedPlacementHours-no" />
+              <Label htmlFor="completedPlacementHours-no">No</Label>
+            </div>
+          </RadioGroup>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="hasCPRFirstAid"
-            checked={formData.hasCPRFirstAid}
-            onCheckedChange={(checked) =>
-              updateFormData("hasCPRFirstAid", checked)
-            }
-          />
-          <Label htmlFor="hasCPRFirstAid">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+          <Label className="text-base font-semibold text-gray-900">
             Do you have CPR/First Aid (Level C or BLS)?
           </Label>
+          <RadioGroup
+            value={formData.hasCPRFirstAid ? "yes" : "no"}
+            onValueChange={(value) =>
+              updateFormData("hasCPRFirstAid", value === "yes")
+            }
+            className="flex space-x-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="yes" id="hasCPRFirstAid-yes" />
+              <Label htmlFor="hasCPRFirstAid-yes">Yes</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="no" id="hasCPRFirstAid-no" />
+              <Label htmlFor="hasCPRFirstAid-no">No</Label>
+            </div>
+          </RadioGroup>
         </div>
 
         <div className="border-t pt-4">
-          <h4 className="text-lg font-semibold text-blue-800 mb-4">Nursing-related:</h4>
-          
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="isCanadianRN"
-                checked={formData.isCanadianRN}
-                onCheckedChange={(checked) =>
-                  updateFormData("isCanadianRN", checked)
-                }
-              />
-              <Label htmlFor="isCanadianRN">
+          <h4 className="text-lg font-semibold text-blue-800 mb-4">
+            Nursing-related:
+          </h4>
+
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+              <Label className="text-base font-semibold text-gray-900">
                 Are you a Canadian-qualified RN/RPN and registered with the CNO?
               </Label>
+              <RadioGroup
+                value={formData.isCanadianRN ? "yes" : "no"}
+                onValueChange={(value) =>
+                  updateFormData("isCanadianRN", value === "yes")
+                }
+                className="flex space-x-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="yes" id="isCanadianRN-yes" />
+                  <Label htmlFor="isCanadianRN-yes">Yes</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="no" id="isCanadianRN-no" />
+                  <Label htmlFor="isCanadianRN-no">No</Label>
+                </div>
+              </RadioGroup>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="isRNStudent"
-                checked={formData.isRNStudent}
-                onCheckedChange={(checked) =>
-                  updateFormData("isRNStudent", checked)
-                }
-              />
-              <Label htmlFor="isRNStudent">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+              <Label className="text-base font-semibold text-gray-900">
                 Are you an RN/RPN student?
               </Label>
+              <RadioGroup
+                value={formData.isRNStudent ? "yes" : "no"}
+                onValueChange={(value) =>
+                  updateFormData("isRNStudent", value === "yes")
+                }
+                className="flex space-x-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="yes" id="isRNStudent-yes" />
+                  <Label htmlFor="isRNStudent-yes">Yes</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="no" id="isRNStudent-no" />
+                  <Label htmlFor="isRNStudent-no">No</Label>
+                </div>
+              </RadioGroup>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="isForeignRN"
-                checked={formData.isForeignRN}
-                onCheckedChange={(checked) =>
-                  updateFormData("isForeignRN", checked)
-                }
-              />
-              <Label htmlFor="isForeignRN">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+              <Label className="text-base font-semibold text-gray-900">
                 Are you a foreign-qualified registered nurse?
               </Label>
+              <RadioGroup
+                value={formData.isForeignRN ? "yes" : "no"}
+                onValueChange={(value) =>
+                  updateFormData("isForeignRN", value === "yes")
+                }
+                className="flex space-x-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="yes" id="isForeignRN-yes" />
+                  <Label htmlFor="isForeignRN-yes">Yes</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="no" id="isForeignRN-no" />
+                  <Label htmlFor="isForeignRN-no">No</Label>
+                </div>
+              </RadioGroup>
             </div>
           </div>
         </div>
@@ -853,28 +1028,38 @@ export default function MultiStepApplicationForm() {
   const renderStep5 = () => (
     <div className="space-y-6">
       <h3 className="text-xl font-semibold text-blue-900 border-b-2 border-blue-200 pb-2">
-        Criminal & Physical Fitness
+        Background & Physical Assessment
       </h3>
       <p className="text-gray-600 text-sm">
-        Please answer these questions honestly. This information is confidential.
+        Please answer these questions honestly. This information is
+        confidential.
       </p>
-      
-      <div className="space-y-4">
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="criminalConviction5Years"
-            checked={formData.criminalConviction5Years}
-            onCheckedChange={(checked) =>
-              updateFormData("criminalConviction5Years", checked)
-            }
-          />
-          <Label htmlFor="criminalConviction5Years">
+
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+          <Label className="text-base font-semibold text-gray-900">
             Have you been convicted of a crime in the past 5 years?
           </Label>
+          <RadioGroup
+            value={formData.criminalConviction5Years ? "yes" : "no"}
+            onValueChange={(value) =>
+              updateFormData("criminalConviction5Years", value === "yes")
+            }
+            className="flex space-x-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="yes" id="criminalConviction5Years-yes" />
+              <Label htmlFor="criminalConviction5Years-yes">Yes</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="no" id="criminalConviction5Years-no" />
+              <Label htmlFor="criminalConviction5Years-no">No</Label>
+            </div>
+          </RadioGroup>
         </div>
 
         {formData.criminalConviction5Years && (
-          <div>
+          <div className="sm:ml-4">
             <Label htmlFor="criminalConvictionDetails">
               Please provide details...
             </Label>
@@ -891,21 +1076,30 @@ export default function MultiStepApplicationForm() {
           </div>
         )}
 
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="physicallyCapable"
-            checked={formData.physicallyCapable}
-            onCheckedChange={(checked) =>
-              updateFormData("physicallyCapable", checked)
-            }
-          />
-          <Label htmlFor="physicallyCapable">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+          <Label className="text-base font-semibold text-gray-900">
             Are you physically capable of performing caregiving duties?
           </Label>
+          <RadioGroup
+            value={formData.physicallyCapable ? "yes" : "no"}
+            onValueChange={(value) =>
+              updateFormData("physicallyCapable", value === "yes")
+            }
+            className="flex space-x-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="yes" id="physicallyCapable-yes" />
+              <Label htmlFor="physicallyCapable-yes">Yes</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="no" id="physicallyCapable-no" />
+              <Label htmlFor="physicallyCapable-no">No</Label>
+            </div>
+          </RadioGroup>
         </div>
 
         {!formData.physicallyCapable && (
-          <div>
+          <div className="sm:ml-4">
             <Label htmlFor="physicalLimitations">
               Please describe any limitations.
             </Label>
@@ -933,7 +1127,7 @@ export default function MultiStepApplicationForm() {
       <p className="text-gray-600 text-sm">
         Please indicate what languages you speak.
       </p>
-      
+
       <div className="space-y-4">
         <div>
           <Label htmlFor="languages">What languages do you speak?</Label>
@@ -965,19 +1159,28 @@ export default function MultiStepApplicationForm() {
       <p className="text-gray-600 text-sm">
         Please tell us about your caregiving experience.
       </p>
-      
-      <div className="space-y-4">
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="hasCaregivingExperience"
-            checked={formData.hasCaregivingExperience}
-            onCheckedChange={(checked) =>
-              updateFormData("hasCaregivingExperience", checked)
-            }
-          />
-          <Label htmlFor="hasCaregivingExperience">
+
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+          <Label className="text-base font-semibold text-gray-900">
             Have you worked as a caregiver before?
           </Label>
+          <RadioGroup
+            value={formData.hasCaregivingExperience ? "yes" : "no"}
+            onValueChange={(value) =>
+              updateFormData("hasCaregivingExperience", value === "yes")
+            }
+            className="flex space-x-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="yes" id="hasCaregivingExperience-yes" />
+              <Label htmlFor="hasCaregivingExperience-yes">Yes</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="no" id="hasCaregivingExperience-no" />
+              <Label htmlFor="hasCaregivingExperience-no">No</Label>
+            </div>
+          </RadioGroup>
         </div>
 
         {formData.hasCaregivingExperience && (
@@ -1030,80 +1233,237 @@ export default function MultiStepApplicationForm() {
                       />
                     </div>
                   </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`isCurrentlyWorking-${index}`}
-                        checked={experience.isCurrentlyWorking}
-                        onCheckedChange={(checked) =>
+
+                  <div>
+                    <Label>Job Title *</Label>
+                    <Select
+                      value={experience.jobTitle}
+                      onValueChange={(value) =>
+                        updateWorkExperience(index, "jobTitle", value)
+                      }
+                    >
+                      <SelectTrigger className="bg-white border-gray-300">
+                        <SelectValue placeholder="Select job title" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="PSW">PSW</SelectItem>
+                        <SelectItem value="Caregiver">Caregiver</SelectItem>
+                        <SelectItem value="Nursing Assistant">
+                          Nursing Assistant
+                        </SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {experience.jobTitle === "Other" && (
+                      <Input
+                        value={experience.jobTitleOther || ""}
+                        onChange={(e) =>
                           updateWorkExperience(
                             index,
-                            "isCurrentlyWorking",
-                            checked
+                            "jobTitleOther",
+                            e.target.value
                           )
                         }
+                        placeholder="Please specify job title"
+                        className="mt-2"
                       />
-                      <Label htmlFor={`isCurrentlyWorking-${index}`}>
-                        Are you currently working here?
-                      </Label>
-                    </div>
-                    
-                    {experience.isCurrentlyWorking && (
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`mayContact-${index}`}
-                          checked={experience.mayContact}
-                          onCheckedChange={(checked) =>
-                            updateWorkExperience(
-                              index,
-                              "mayContact",
-                              checked
-                            )
-                          }
-                        />
-                        <Label htmlFor={`mayContact-${index}`}>
-                          May we contact them?
-                        </Label>
-                      </div>
                     )}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label>Job Title *</Label>
-                      <Select
-                        value={experience.jobTitle}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+                      <Label className="text-base font-semibold text-gray-900">
+                        Do you currently work here?
+                      </Label>
+                      <RadioGroup
+                        value={experience.isCurrentlyWorking ? "yes" : "no"}
                         onValueChange={(value) =>
-                          updateWorkExperience(index, "jobTitle", value)
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select job title" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="PSW">PSW</SelectItem>
-                          <SelectItem value="Caregiver">Caregiver</SelectItem>
-                          <SelectItem value="Nursing Assistant">Nursing Assistant</SelectItem>
-                          <SelectItem value="Other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>Duration *</Label>
-                      <Input
-                        value={experience.duration}
-                        onChange={(e) =>
                           updateWorkExperience(
                             index,
-                            "duration",
-                            e.target.value
+                            "isCurrentlyWorking",
+                            value === "yes"
                           )
                         }
-                        placeholder="e.g., Jan 2022 – Apr 2023"
-                        required
-                      />
+                        className="flex space-x-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem
+                            value="yes"
+                            id={`isCurrentlyWorking-${index}-yes`}
+                          />
+                          <Label htmlFor={`isCurrentlyWorking-${index}-yes`}>
+                            Yes
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem
+                            value="no"
+                            id={`isCurrentlyWorking-${index}-no`}
+                          />
+                          <Label htmlFor={`isCurrentlyWorking-${index}-no`}>
+                            No
+                          </Label>
+                        </div>
+                      </RadioGroup>
                     </div>
+
+                    {experience.isCurrentlyWorking && (
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+                        <Label className="text-base font-semibold text-gray-900">
+                          May we contact this employer?
+                        </Label>
+                        <RadioGroup
+                          value={experience.mayContact ? "yes" : "no"}
+                          onValueChange={(value) =>
+                            updateWorkExperience(
+                              index,
+                              "mayContact",
+                              value === "yes"
+                            )
+                          }
+                          className="flex space-x-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem
+                              value="yes"
+                              id={`mayContact-${index}-yes`}
+                            />
+                            <Label htmlFor={`mayContact-${index}-yes`}>
+                              Yes
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem
+                              value="no"
+                              id={`mayContact-${index}-no`}
+                            />
+                            <Label htmlFor={`mayContact-${index}-no`}>No</Label>
+                          </div>
+                        </RadioGroup>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label>Duration *</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-xs text-gray-600">From</Label>
+                        <Select
+                          value={experience.startMonth}
+                          onValueChange={(value) =>
+                            updateWorkExperience(index, "startMonth", value)
+                          }
+                        >
+                          <SelectTrigger className="bg-white border-gray-300">
+                            <SelectValue placeholder="Month" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {[
+                              "January",
+                              "February",
+                              "March",
+                              "April",
+                              "May",
+                              "June",
+                              "July",
+                              "August",
+                              "September",
+                              "October",
+                              "November",
+                              "December",
+                            ].map((month) => (
+                              <SelectItem key={month} value={month}>
+                                {month}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-gray-600">Year</Label>
+                        <Select
+                          value={experience.startYear}
+                          onValueChange={(value) =>
+                            updateWorkExperience(index, "startYear", value)
+                          }
+                        >
+                          <SelectTrigger className="bg-white border-gray-300">
+                            <SelectValue placeholder="Year" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from(
+                              { length: new Date().getFullYear() - 1980 + 1 },
+                              (_, i) => new Date().getFullYear() - i
+                            ).map((year) => (
+                              <SelectItem key={year} value={year.toString()}>
+                                {year}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    {!experience.isCurrentlyWorking && (
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        <div>
+                          <Label className="text-xs text-gray-600">To</Label>
+                          <Select
+                            value={experience.endMonth}
+                            onValueChange={(value) =>
+                              updateWorkExperience(index, "endMonth", value)
+                            }
+                          >
+                            <SelectTrigger className="bg-white border-gray-300">
+                              <SelectValue placeholder="Month" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {[
+                                "January",
+                                "February",
+                                "March",
+                                "April",
+                                "May",
+                                "June",
+                                "July",
+                                "August",
+                                "September",
+                                "October",
+                                "November",
+                                "December",
+                              ].map((month) => (
+                                <SelectItem key={month} value={month}>
+                                  {month}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs text-gray-600">Year</Label>
+                          <Select
+                            value={experience.endYear}
+                            onValueChange={(value) =>
+                              updateWorkExperience(index, "endYear", value)
+                            }
+                          >
+                            <SelectTrigger className="bg-white border-gray-300">
+                              <SelectValue placeholder="Year" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.from(
+                                { length: new Date().getFullYear() - 1980 + 1 },
+                                (_, i) => new Date().getFullYear() - i
+                              ).map((year) => (
+                                <SelectItem key={year} value={year.toString()}>
+                                  {year}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -1123,7 +1483,7 @@ export default function MultiStepApplicationForm() {
                 </CardContent>
               </Card>
             ))}
-            
+
             {formData.workExperience.length < 2 && (
               <Button
                 type="button"
@@ -1149,12 +1509,18 @@ export default function MultiStepApplicationForm() {
       <p className="text-gray-600 text-sm">
         Please tell us about your availability and preferences.
       </p>
-      
+
       <div className="space-y-6">
         <div>
           <Label>What type of work are you looking for?</Label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-            {["Full-Time", "Part-Time", "Casual / On-Call", "Overnight Shifts", "Live-In Care"].map((type) => (
+            {[
+              "Full-Time",
+              "Part-Time",
+              "Casual / On-Call",
+              "Overnight Shifts",
+              "Live-In Care",
+            ].map((type) => (
               <div key={type} className="flex items-center space-x-2">
                 <Checkbox
                   id={`workType-${type}`}
@@ -1175,7 +1541,15 @@ export default function MultiStepApplicationForm() {
         <div>
           <Label>What days are you available to work?</Label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
-            {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
+            {[
+              "Monday",
+              "Tuesday",
+              "Wednesday",
+              "Thursday",
+              "Friday",
+              "Saturday",
+              "Sunday",
+            ].map((day) => (
               <div key={day} className="flex items-center space-x-2">
                 <Checkbox
                   id={`availableDay-${day}`}
@@ -1207,7 +1581,9 @@ export default function MultiStepApplicationForm() {
               <div key={key} className="flex items-center space-x-2">
                 <Checkbox
                   id={key}
-                  checked={formData[key as keyof ApplicationFormData] as boolean}
+                  checked={
+                    formData[key as keyof ApplicationFormData] as boolean
+                  }
                   onCheckedChange={(checked) =>
                     updateFormData(key as keyof ApplicationFormData, checked)
                   }
@@ -1222,7 +1598,9 @@ export default function MultiStepApplicationForm() {
           <Label>Preferred shift length?</Label>
           <Select
             value={formData.preferredShiftLength}
-            onValueChange={(value) => updateFormData("preferredShiftLength", value)}
+            onValueChange={(value) =>
+              updateFormData("preferredShiftLength", value)
+            }
           >
             <SelectTrigger className="mt-1">
               <SelectValue placeholder="Select shift length" />
@@ -1253,7 +1631,7 @@ export default function MultiStepApplicationForm() {
               <SelectItem value="Other">Other</SelectItem>
             </SelectContent>
           </Select>
-          
+
           {formData.startDate === "Other" && (
             <Input
               value={formData.startDateOther}
@@ -1283,32 +1661,16 @@ export default function MultiStepApplicationForm() {
           </Select>
         </div>
 
-        <div>
-          <Label>Preferred Work Locations</Label>
-          <Textarea
-            value={formData.preferredLocations.join(", ")}
-            onChange={(e) => {
-              const value = e.target.value;
-              const items = value.split(",").map((item) => item.trim());
-              updateFormData("preferredLocations", items);
-            }}
-            placeholder="e.g., Toronto, Etobicoke, North York (separate with commas)"
-            className="mt-1"
-            rows={2}
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Separate locations with commas
-          </p>
-        </div>
-
         <Separator className="my-6" />
-        
+
         <div className="space-y-4">
-          <h4 className="text-lg font-semibold text-blue-900">Final Declarations</h4>
+          <h4 className="text-lg font-semibold text-blue-900">
+            Final Declarations
+          </h4>
           <p className="text-gray-600 text-sm">
             Please read and acknowledge the following statements.
           </p>
-          
+
           <div className="space-y-4">
             <div className="flex items-start space-x-2">
               <Checkbox
@@ -1319,7 +1681,8 @@ export default function MultiStepApplicationForm() {
                 }
               />
               <Label htmlFor="certificationTruthfulness" className="text-sm">
-                I certify that all information provided in this application is true and complete to the best of my knowledge.
+                I certify that all information provided in this application is
+                true and complete to the best of my knowledge.
               </Label>
             </div>
 
@@ -1332,7 +1695,8 @@ export default function MultiStepApplicationForm() {
                 }
               />
               <Label htmlFor="authorizationBackgroundCheck" className="text-sm">
-                I authorize Haven at Home to conduct a background check and verify my qualifications.
+                I authorize Haven at Home to conduct a background check and
+                verify my qualifications.
               </Label>
             </div>
 
@@ -1344,8 +1708,12 @@ export default function MultiStepApplicationForm() {
                   updateFormData("understandingAtWillEmployment", checked)
                 }
               />
-              <Label htmlFor="understandingAtWillEmployment" className="text-sm">
-                I understand that employment is at-will and can be terminated at any time by either party.
+              <Label
+                htmlFor="understandingAtWillEmployment"
+                className="text-sm"
+              >
+                I understand that employment is at-will and can be terminated at
+                any time by either party.
               </Label>
             </div>
 
@@ -1357,8 +1725,12 @@ export default function MultiStepApplicationForm() {
                   updateFormData("acknowledgmentApplicationValidity", checked)
                 }
               />
-              <Label htmlFor="acknowledgmentApplicationValidity" className="text-sm">
-                I acknowledge that this application is valid for 90 days from the date of submission.
+              <Label
+                htmlFor="acknowledgmentApplicationValidity"
+                className="text-sm"
+              >
+                I acknowledge that this application is valid for 90 days from
+                the date of submission.
               </Label>
             </div>
 
@@ -1367,7 +1739,9 @@ export default function MultiStepApplicationForm() {
               <Input
                 id="digitalSignature"
                 value={formData.digitalSignature}
-                onChange={(e) => updateFormData("digitalSignature", e.target.value)}
+                onChange={(e) =>
+                  updateFormData("digitalSignature", e.target.value)
+                }
                 placeholder="Type your full name to sign"
                 required
                 className="mt-1"
@@ -1380,7 +1754,9 @@ export default function MultiStepApplicationForm() {
                 id="signatureDate"
                 type="date"
                 value={formData.signatureDate}
-                onChange={(e) => updateFormData("signatureDate", e.target.value)}
+                onChange={(e) =>
+                  updateFormData("signatureDate", e.target.value)
+                }
                 required
                 className="mt-1"
               />
@@ -1438,6 +1814,16 @@ export default function MultiStepApplicationForm() {
             </div>
           </CardHeader>
           <CardContent className="space-y-6 bg-white p-4 sm:p-6">
+            {currentStep === 1 && (
+              <div className="text-center mb-6">
+                <p className="text-gray-600 text-sm sm:text-base">
+                  Complete this comprehensive application to join our team of
+                  compassionate caregivers. We're looking for dedicated
+                  individuals who share our commitment to providing exceptional
+                  care with dignity and respect.
+                </p>
+              </div>
+            )}
             {renderStep()}
 
             <div className="flex flex-col sm:flex-row justify-between gap-4 pt-6">
@@ -1457,12 +1843,12 @@ export default function MultiStepApplicationForm() {
                   type="button"
                   onClick={nextStep}
                   disabled={!validateStep(currentStep)}
-                  className="flex-1 sm:flex-none order-2 sm:order-1"
+                  className="bg-blue-600 hover:bg-blue-700 text-white flex-1 sm:flex-none order-2 sm:order-1"
                 >
                   {currentStep === 1 && "Upload Documents"}
                   {currentStep === 2 && "Quick Eligibility Check"}
                   {currentStep === 3 && "Qualifications"}
-                  {currentStep === 4 && "Criminal & Physical Fitness"}
+                  {currentStep === 4 && "Background & Physical Assessment"}
                   {currentStep === 5 && "Languages"}
                   {currentStep === 6 && "Work Experience"}
                   {currentStep === 7 && "Availability"}
@@ -1470,9 +1856,10 @@ export default function MultiStepApplicationForm() {
                 </Button>
               ) : (
                 <Button
-                  type="submit"
+                  type="button"
+                  onClick={submitApplication}
                   disabled={isSubmitting}
-                  className="flex-1 sm:flex-none order-2 sm:order-1"
+                  className="bg-green-600 hover:bg-green-700 text-white flex-1 sm:flex-none order-2 sm:order-1"
                 >
                   {isSubmitting ? "Submitting..." : "Submit Application"}
                 </Button>

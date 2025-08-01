@@ -1467,16 +1467,18 @@ function PSWCompetencyAssessmentContent() {
             </div>
           </CardHeader>
           <CardContent className="space-y-6 bg-white p-4 sm:p-6">
-            {/* Description */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <p className="text-blue-900 text-sm leading-relaxed">
-                This form helps us get to know your strengths and the areas
-                where you&apos;d appreciate more support. It&apos;s not a test —
-                we&apos;re here to learn with you, grow together, and build a
-                respectful working relationship. Answer what feels true to your
-                experience.
-              </p>
-            </div>
+            {/* Description - only show on first step */}
+            {currentStep === 1 && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <p className="text-blue-900 text-sm leading-relaxed">
+                  This form helps us get to know your strengths and the areas
+                  where you&apos;d appreciate more support. It&apos;s not a test
+                  — we&apos;re here to learn with you, grow together, and build
+                  a respectful working relationship. Answer what feels true to
+                  your experience.
+                </p>
+              </div>
+            )}
 
             {renderStep()}
 

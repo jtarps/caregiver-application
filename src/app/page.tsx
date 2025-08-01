@@ -17,12 +17,12 @@ export default function Home() {
                   Caregiver Application
                 </p>
               </div>
-              <p className="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base">
+              {/* <p className="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base">
                 Complete this comprehensive application to join our team of
                 compassionate caregivers. We&apos;re looking for dedicated
                 individuals who share our commitment to providing exceptional
                 care with dignity and respect.
-              </p>
+              </p> */}
             </div>
             <MultiStepApplicationForm />
           </div>
