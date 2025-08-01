@@ -11,8 +11,6 @@ import { Progress } from "@/components/ui/progress";
 import {
   Plus,
   X,
-  Upload,
-  FileText,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -178,18 +176,7 @@ const initialFormData: ApplicationFormData = {
   signatureDate: "",
 };
 
-const documentTypes = [
-  { key: "driversLicense", label: "Driver's License (Front + License Number)" },
-  { key: "workPermit", label: "Work Permit (if applicable)" },
-  { key: "pswCertificate", label: "PSW Certificate/CNO/Proof of Education" },
-  { key: "cprFirstAid", label: "Valid CPR and First Aid Certification" },
-  { key: "vulnerableSectorCheck", label: "Valid Vulnerable Sector Check" },
-  { key: "photo", label: "Photo with White Background" },
-  { key: "resume", label: "Updated Resume" },
-  { key: "immunizationRecords", label: "Immunization/Vaccination Records" },
-  { key: "directDeposit", label: "Direct Deposit Authorization/Void Check" },
-  { key: "sinDocumentation", label: "SIN Documentation" },
-];
+
 
 export default function MultiStepApplicationForm() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -197,10 +184,6 @@ export default function MultiStepApplicationForm() {
     useState<ApplicationFormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [applicationId, setApplicationId] = useState<string>("");
-  const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
-  const [rawCertifications, setRawCertifications] = useState<string>("");
-  const [rawSpecializations, setRawSpecializations] = useState<string>("");
-  const [rawLanguages, setRawLanguages] = useState<string>("");
   const router = useRouter();
 
   // Generate unique application ID when component mounts
@@ -716,7 +699,7 @@ export default function MultiStepApplicationForm() {
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
           <Label className="text-base font-semibold text-gray-900">
-            Do you have a valid driver's license?
+            Do you have a valid driver&apos;s license?
           </Label>
           <RadioGroup
             value={formData.hasDriverLicense ? "yes" : "no"}
@@ -906,7 +889,7 @@ export default function MultiStepApplicationForm() {
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
           <Label className="text-base font-semibold text-gray-900">
-            If you're a PSW student, have you completed placement hours?
+            If you&apos;re a PSW student, have you completed placement hours?
           </Label>
           <RadioGroup
             value={formData.completedPlacementHours ? "yes" : "no"}
@@ -1643,7 +1626,7 @@ export default function MultiStepApplicationForm() {
         </div>
 
         <div>
-          <Label>Total hours per week you're available?</Label>
+                      <Label>Total hours per week you&apos;re available?</Label>
           <Select
             value={formData.hoursPerWeek}
             onValueChange={(value) => updateFormData("hoursPerWeek", value)}
@@ -1818,7 +1801,7 @@ export default function MultiStepApplicationForm() {
               <div className="text-center mb-6">
                 <p className="text-gray-600 text-sm sm:text-base">
                   Complete this comprehensive application to join our team of
-                  compassionate caregivers. We're looking for dedicated
+                  compassionate caregivers. We&apos;re looking for dedicated
                   individuals who share our commitment to providing exceptional
                   care with dignity and respect.
                 </p>
