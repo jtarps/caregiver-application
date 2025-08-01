@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -320,6 +320,106 @@ export default function MultiStepApplicationForm() {
     setIsSubmitting(true);
 
     try {
+      // Upload files to Supabase storage first
+      const uploadedFiles: { [key: string]: string } = {};
+      
+      // Check if Supabase is configured
+      if (!isSupabaseConfigured()) {
+        toast.error("Database not configured. Please contact support.");
+        return;
+      }
+
+      if (!supabase) {
+        toast.error("Database connection failed. Please try again.");
+        return;
+      }
+
+      try {
+        // Upload resume
+        if (formData.resume) {
+          const resumeFileName = `${applicationId}_resume_${Date.now()}.${formData.resume.name.split('.').pop()}`;
+          const { error: resumeError } = await supabase.storage
+            .from('caregiver-documents')
+            .upload(resumeFileName, formData.resume);
+          
+          if (resumeError) {
+            console.error('Resume upload error:', resumeError);
+            toast.error('Failed to upload resume. Please try again.');
+            return;
+          }
+          
+          const { data: resumeUrl } = supabase.storage
+            .from('caregiver-documents')
+            .getPublicUrl(resumeFileName);
+          
+          uploadedFiles.resume_url = resumeUrl.publicUrl;
+        }
+
+        // Upload CPR certificate
+        if (formData.cprCertificate) {
+          const cprFileName = `${applicationId}_cpr_${Date.now()}.${formData.cprCertificate.name.split('.').pop()}`;
+          const { error: cprError } = await supabase.storage
+            .from('caregiver-documents')
+            .upload(cprFileName, formData.cprCertificate);
+          
+          if (cprError) {
+            console.error('CPR certificate upload error:', cprError);
+            toast.error('Failed to upload CPR certificate. Please try again.');
+            return;
+          }
+          
+          const { data: cprUrl } = supabase.storage
+            .from('caregiver-documents')
+            .getPublicUrl(cprFileName);
+          
+          uploadedFiles.cpr_certificate_url = cprUrl.publicUrl;
+        }
+
+        // Upload PSW certificate
+        if (formData.pswCertificate) {
+          const pswFileName = `${applicationId}_psw_${Date.now()}.${formData.pswCertificate.name.split('.').pop()}`;
+          const { error: pswError } = await supabase.storage
+            .from('caregiver-documents')
+            .upload(pswFileName, formData.pswCertificate);
+          
+          if (pswError) {
+            console.error('PSW certificate upload error:', pswError);
+            toast.error('Failed to upload PSW certificate. Please try again.');
+            return;
+          }
+          
+          const { data: pswUrl } = supabase.storage
+            .from('caregiver-documents')
+            .getPublicUrl(pswFileName);
+          
+          uploadedFiles.psw_certificate_url = pswUrl.publicUrl;
+        }
+
+        // Upload additional certifications
+        if (formData.additionalCertifications) {
+          const certFileName = `${applicationId}_additional_cert_${Date.now()}.${formData.additionalCertifications.name.split('.').pop()}`;
+          const { error: certError } = await supabase.storage
+            .from('caregiver-documents')
+            .upload(certFileName, formData.additionalCertifications);
+          
+          if (certError) {
+            console.error('Additional certification upload error:', certError);
+            toast.error('Failed to upload additional certification. Please try again.');
+            return;
+          }
+          
+          const { data: certUrl } = supabase.storage
+            .from('caregiver-documents')
+            .getPublicUrl(certFileName);
+          
+          uploadedFiles.additional_certifications_url = certUrl.publicUrl;
+        }
+      } catch (uploadError) {
+        console.error('File upload error:', uploadError);
+        toast.error('Failed to upload documents. Please try again.');
+        return;
+      }
+
       const applicationData = {
         application_id: applicationId,
         first_name: formData.firstName,
@@ -392,106 +492,6 @@ export default function MultiStepApplicationForm() {
 
       console.log("Submitting application with ID:", applicationId);
       console.log("Application data:", applicationData);
-
-      // Check if Supabase is configured
-      if (!isSupabaseConfigured()) {
-        toast.error("Database not configured. Please contact support.");
-        return;
-      }
-
-      if (!supabase) {
-        toast.error("Database connection failed. Please try again.");
-        return;
-      }
-
-      // Upload files to Supabase storage
-      const uploadedFiles: { [key: string]: string } = {};
-      
-      try {
-        // Upload resume
-        if (formData.resume) {
-          const resumeFileName = `${applicationId}_resume_${Date.now()}.${formData.resume.name.split('.').pop()}`;
-          const { data: resumeData, error: resumeError } = await supabase.storage
-            .from('caregiver-documents')
-            .upload(resumeFileName, formData.resume);
-          
-          if (resumeError) {
-            console.error('Resume upload error:', resumeError);
-            toast.error('Failed to upload resume. Please try again.');
-            return;
-          }
-          
-          const { data: resumeUrl } = supabase.storage
-            .from('caregiver-documents')
-            .getPublicUrl(resumeFileName);
-          
-          uploadedFiles.resume_url = resumeUrl.publicUrl;
-        }
-
-        // Upload CPR certificate
-        if (formData.cprCertificate) {
-          const cprFileName = `${applicationId}_cpr_${Date.now()}.${formData.cprCertificate.name.split('.').pop()}`;
-          const { data: cprData, error: cprError } = await supabase.storage
-            .from('caregiver-documents')
-            .upload(cprFileName, formData.cprCertificate);
-          
-          if (cprError) {
-            console.error('CPR certificate upload error:', cprError);
-            toast.error('Failed to upload CPR certificate. Please try again.');
-            return;
-          }
-          
-          const { data: cprUrl } = supabase.storage
-            .from('caregiver-documents')
-            .getPublicUrl(cprFileName);
-          
-          uploadedFiles.cpr_certificate_url = cprUrl.publicUrl;
-        }
-
-        // Upload PSW certificate
-        if (formData.pswCertificate) {
-          const pswFileName = `${applicationId}_psw_${Date.now()}.${formData.pswCertificate.name.split('.').pop()}`;
-          const { data: pswData, error: pswError } = await supabase.storage
-            .from('caregiver-documents')
-            .upload(pswFileName, formData.pswCertificate);
-          
-          if (pswError) {
-            console.error('PSW certificate upload error:', pswError);
-            toast.error('Failed to upload PSW certificate. Please try again.');
-            return;
-          }
-          
-          const { data: pswUrl } = supabase.storage
-            .from('caregiver-documents')
-            .getPublicUrl(pswFileName);
-          
-          uploadedFiles.psw_certificate_url = pswUrl.publicUrl;
-        }
-
-        // Upload additional certifications
-        if (formData.additionalCertifications) {
-          const certFileName = `${applicationId}_additional_cert_${Date.now()}.${formData.additionalCertifications.name.split('.').pop()}`;
-          const { data: certData, error: certError } = await supabase.storage
-            .from('caregiver-documents')
-            .upload(certFileName, formData.additionalCertifications);
-          
-          if (certError) {
-            console.error('Additional certification upload error:', certError);
-            toast.error('Failed to upload additional certification. Please try again.');
-            return;
-          }
-          
-          const { data: certUrl } = supabase.storage
-            .from('caregiver-documents')
-            .getPublicUrl(certFileName);
-          
-          uploadedFiles.additional_certifications_url = certUrl.publicUrl;
-        }
-      } catch (uploadError) {
-        console.error('File upload error:', uploadError);
-        toast.error('Failed to upload documents. Please try again.');
-        return;
-      }
 
       const { error } = await supabase
         .from("caregiver_applications")
